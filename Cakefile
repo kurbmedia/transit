@@ -28,9 +28,11 @@ cleanCSS         = require 'clean-css'
 javascripts  = {
   'build/transit.js': [
     'src/core.coffee'
+    'src/ui.coffee'
     'src/model/context.coffee'
     'src/model/deliverable.coffee'
     'src/model/contexts.coffee'
+    'src/views/context.coffee'
   ]
 }
 
