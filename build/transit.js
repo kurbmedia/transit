@@ -133,7 +133,7 @@
 
       this.hide = __bind(this.hide, this);
 
-      this.addRegion = __bind(this.addRegion, this);
+      this.attach = __bind(this.attach, this);
       return Interface.__super__.constructor.apply(this, arguments);
     }
 
@@ -146,22 +146,11 @@
     Interface.prototype.regions = [];
 
     Interface.prototype.initialize = function() {
-      var _this = this;
-      this.Toolbar = new Toolbar();
-      return $('[data-region]').each(function(i, node) {
-        return _this.regions.push(new Region({
-          el: $(node)
-        }));
-      });
+      return this.Toolbar = new Toolbar();
     };
 
-    Interface.prototype.addRegion = function(node) {
-      var region;
-      region = new Region({
-        el: $(node)
-      });
-      this.regions.push(region);
-      return region;
+    Interface.prototype.attach = function(model) {
+      return this.model = model;
     };
 
     Interface.prototype.hide = function() {

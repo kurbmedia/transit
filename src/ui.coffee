@@ -12,15 +12,10 @@ class Interface extends Backbone.View
   className: 'transit-ui'
   Toolbar: null
   regions: []
-  initialize:()->
-    @Toolbar = new Toolbar()
-    $('[data-region]').each (i, node)=> @regions.push(new Region(el: $(node)))
   
-  addRegion:(node)=> 
-    region = new Region(el: $(node))
-    @regions.push(region)
-    region
-
+  initialize:()-> @Toolbar = new Toolbar()
+  attach:(model)=> @model = model
+  
   hide:()=> 
     @$el.hide()
     @
