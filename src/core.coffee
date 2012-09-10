@@ -1,5 +1,3 @@
-$ = @$ || Backbone.$
-
 ##
 # Store a cache of items, this can be views, contexts, templates etc.
 # Available objects are registered by name and type. 
@@ -9,7 +7,7 @@ $ = @$ || Backbone.$
 class Cache
   view: {}
   context: {}
-
+  tpl: {}
   get: (type, name)=>
     type = type.toLowerCase()
     name = name.toLowerCase()
@@ -20,6 +18,10 @@ class Cache
     type = type.toLowerCase()
     name = name.toLowerCase()
     @[type][name] = obj
+  
+  drop:(type, name)=>
+    delete @[type][name]
+    @
 
 # General settings
 
@@ -29,27 +31,28 @@ Settings =
 
 # Template management functionality
 
-Template =
-  _cache: {}
-  compile:(html)->  _.template(html)
-  load: (path, callback)->
-    self = Transit.Template
-    return callback(self[path]) if self[path] isnt undefined
-    $.get("#{setting('template_path')}/#{path}", (data)->
-      result = self.compile(data)
-      self[path] = result
+class Template
+  compile:(html)=> _.template(html)
+  load: (path, callback)=>
+    exists = Transit.cache.get('tpl', path)
+    return callback(exists) if exists isnt undefined
+    $.get("#{setting('template_path')}/#{path}", (data)=>
+      result = @compile(data)
+      Transit.cache.set('tpl', path, result)
       callback(result)
     )
-  set: (name, html)->
+  set: (name, html)=>
     if typeof html is 'string'
-      @_cache[name] = @compile(html)
-    else @_cache[name] = html  
-
+      html = @compile(html)
+    Transit.cache.set('tpl', name, html)
+    @
 
 Transit = @Transit = {}
 Transit.cache    = new Cache()
 Transit.settings = Settings
-Transit.Template = Template
+Transit.template = new Template()
+
+
 
 # Allow configuration globally
 Transit.setup = (options = {})-> 
@@ -78,7 +81,8 @@ Transit.init = (model)->
   Transit.Manager.attach(model)
   Transit.trigger('init')
   
-  
+Transit.version = "0.3.0"
+
 # Internal helper functions 
 setting  = (name)-> Transit.settings[name]
 

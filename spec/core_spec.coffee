@@ -8,7 +8,8 @@ describe "Transit", ()->
     
     item = new Transit.Deliverable()
     
-    beforeEach ()-> Transit.init(item)
+    beforeEach ()-> 
+      Transit.init(item)
     
     it 'attaches the model to the ui', ()->
       expect(Transit.Manager.model)
@@ -86,29 +87,13 @@ describe "Transit", ()->
       describe 'when the template is cached', ()->
         
         beforeEach ()->
-          Transit.Template._cache['test'] = "test"
+          Transit.cache.set('tpl', 'test', 'test')
         
         it 'loads the cached template', ()->
-          Transit.Template
+          Transit.template
             .load('test', (result)-> 
               expect(result).toEqual('test')
             )
       
-        afterEach ()-> Transit.Template._cache = {}
-      
-      describe 'when the template is not cached', ()->
-
-        beforeEach ()-> 
-          spyOn($, "get").andCallFake (path, callback)->
-            callback('loaded-test')
-          
-          spyOn(Transit.Template, 'compile')
-            .andCallFake((html)-> html)
-
-        afterEach ()-> Transit.Template._cache = {}
-        
-        it 'loads the template via ajax', ()->
-          Transit.Template
-            .load('test2', (result)->
-              expect(result).toEqual('loaded-test')
-            )
+        afterEach ()-> 
+          Transit.cache.drop('tpl', 'test')

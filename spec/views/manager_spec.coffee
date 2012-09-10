@@ -20,9 +20,9 @@ describe 'Manager window', ()->
     expect(Transit.Manager.$('ul.transit-tab-bar').length)
       .toNotEqual(0)
    
-  it 'creates a Panels instance', ()->
-    expect(Transit.Manager.Panels instanceof Backbone.View)
-       .toBeTruthy()
+  it 'creates a tab bar instance', ()->
+    expect(Transit.Manager.tabBar)
+       .toBeDefined()
 
   describe 'attaching a model', ()->
     
@@ -30,10 +30,13 @@ describe 'Manager window', ()->
       expect(Transit.Manager.model)
         .toBe(item)
         
-  describe '.setHeading', ()->
+  describe '.set', ()->
     
-    beforeEach ()-> Transit.Manager.setHeading('Test')
+    describe 'with "heading"', ()->
+      
+      beforeEach ()-> 
+        Transit.Manager.set('heading', 'Test')
     
-    it 'sets the toolbar heading', ()->
-      expect(heading.text())
-        .toEqual("Test")
+      it 'sets the toolbar heading', ()->
+        expect(heading.text())
+          .toEqual("Test")

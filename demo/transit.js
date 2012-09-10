@@ -1,13 +1,13 @@
 (function() {
-  var $, Cache, Settings, Template, Transit, setting,
+  var Cache, Settings, Template, Transit, setting,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __slice = [].slice;
-
-  $ = this.$ || Backbone.$;
 
   Cache = (function() {
 
     function Cache() {
+      this.drop = __bind(this.drop, this);
+
       this.set = __bind(this.set, this);
 
       this.get = __bind(this.get, this);
@@ -17,6 +17,8 @@
     Cache.prototype.view = {};
 
     Cache.prototype.context = {};
+
+    Cache.prototype.tpl = {};
 
     Cache.prototype.get = function(type, name) {
       var found;
@@ -36,6 +38,11 @@
       return this[type][name] = obj;
     };
 
+    Cache.prototype.drop = function(type, name) {
+      delete this[type][name];
+      return this;
+    };
+
     return Cache;
 
   })();
@@ -45,32 +52,47 @@
     asset_path: '/transit/assets'
   };
 
-  Template = {
-    _cache: {},
-    compile: function(html) {
+  Template = (function() {
+
+    function Template() {
+      this.set = __bind(this.set, this);
+
+      this.load = __bind(this.load, this);
+
+      this.compile = __bind(this.compile, this);
+
+    }
+
+    Template.prototype.compile = function(html) {
       return _.template(html);
-    },
-    load: function(path, callback) {
-      var self;
-      self = Transit.Template;
-      if (self[path] !== void 0) {
-        return callback(self[path]);
+    };
+
+    Template.prototype.load = function(path, callback) {
+      var exists,
+        _this = this;
+      exists = Transit.cache.get('tpl', path);
+      if (exists !== void 0) {
+        return callback(exists);
       }
       return $.get("" + (setting('template_path')) + "/" + path, function(data) {
         var result;
-        result = self.compile(data);
-        self[path] = result;
+        result = _this.compile(data);
+        Transit.cache.set('tpl', path, result);
         return callback(result);
       });
-    },
-    set: function(name, html) {
+    };
+
+    Template.prototype.set = function(name, html) {
       if (typeof html === 'string') {
-        return this._cache[name] = this.compile(html);
-      } else {
-        return this._cache[name] = html;
+        html = this.compile(html);
       }
-    }
-  };
+      Transit.cache.set('tpl', name, html);
+      return this;
+    };
+
+    return Template;
+
+  })();
 
   Transit = this.Transit = {};
 
@@ -78,7 +100,7 @@
 
   Transit.settings = Settings;
 
-  Transit.Template = Template;
+  Transit.template = new Template();
 
   Transit.setup = function(options) {
     if (options == null) {
@@ -113,6 +135,8 @@
     return Transit.trigger('init');
   };
 
+  Transit.version = "0.3.0";
+
   setting = function(name) {
     return Transit.settings[name];
   };
@@ -121,293 +145,85 @@
 
 }).call(this);
 (function() {
-  var $, Manager, Panel, Panels,
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-    __slice = [].slice;
+  var Notify,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
-  $ = window.$ || Backbone.$;
+  Notify = (function() {
 
-  /*
-  
-  The manager contains the global "shell" that contains
-  all additional ui elements
-  */
+    function Notify() {
+      this.success = __bind(this.success, this);
 
+      this.info = __bind(this.info, this);
 
-  Manager = (function(_super) {
+      this.error = __bind(this.error, this);
 
-    __extends(Manager, _super);
-
-    function Manager() {
-      this._save = __bind(this._save, this);
-
-      this._removeTab = __bind(this._removeTab, this);
-
-      this._addTab = __bind(this._addTab, this);
-
-      this.show = __bind(this.show, this);
-
-      this.setHeading = __bind(this.setHeading, this);
-
-      this.render = __bind(this.render, this);
-
-      this.hide = __bind(this.hide, this);
-      return Manager.__super__.constructor.apply(this, arguments);
     }
 
-    Manager.prototype.tagName = 'div';
+    Notify.prototype.error = function() {};
 
-    Manager.prototype.className = 'transit-ui';
+    Notify.prototype.info = function() {};
 
-    Manager.prototype.events = {
-      'click button.save': '_save'
-    };
+    Notify.prototype.success = function() {};
 
-    Manager.prototype.Panels = null;
+    return Notify;
 
-    Manager.prototype._heading = null;
+  })();
 
-    Manager.prototype._tabbar = null;
-
-    Manager.prototype.initialize = function() {
-      Transit.one('init', this.render);
-      this.Panels = new Panels();
-      this.Panels.on('add', this._addTab);
-      return this.Panels.on('remove', this._removeTab);
-    };
-
-    Manager.prototype.add = function() {
-      var panels, _ref;
-      panels = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      return (_ref = this.Panels).add.apply(_ref, panels);
-    };
-
-    Manager.prototype.append = function(node) {
-      return this.$el.append(node);
-    };
-
-    Manager.prototype.attach = function(model) {
-      this.model = model;
-      return this;
-    };
-
-    Manager.prototype.hide = function() {
-      this.$el.addClass('hidden');
-      $('html').addClass('transit-ui-hidden').removeClass('transit-ui-active');
-      Transit.trigger('ui:hide');
-      return this;
-    };
-
-    Manager.prototype.prepend = function(node) {
-      return this.$el.prepend(node);
-    };
-
-    Manager.prototype.render = function() {
-      if ($('#transit_ui').length === 0) {
-        Manager.__super__.render.apply(this, arguments);
-        $('html').addClass('transit-ui-hidden');
-        this.$el.addClass('hidden').append("<h1>Title</h1>").append('<ul class="transit-tab-bar"></ul>').attr('id', 'transit_ui').appendTo($('body'));
-        this.$el.append(this.Panels.render().$el);
-        this._tabbar = this.$('ul.transit-tab-bar');
-        this._heading = this.$('h1');
-      }
-      return this;
-    };
-
-    Manager.prototype.setHeading = function(text) {
-      return this._heading.html(text);
-    };
-
-    Manager.prototype.show = function() {
-      this.$el.removeClass('hidden');
-      $('html').removeClass('transit-ui-hidden').addClass('transit-ui-active');
-      Transit.trigger('ui:show');
-      return this;
-    };
-
-    Manager.prototype._addTab = function(panel) {
-      var _this = this;
-      this._tabbar.append("      <li class='tab' id='panel_tab_" + panel.cid + "' data-panel='" + panel.cid + "'>        <a href='#', class='" + panel.icon + "' data-panel='" + panel.cid + "'>" + panel.title + "</a>      </li>");
-      return this.$("a[data-panel='" + panel.cid + "']").on('click', function(event) {
-        $('li.tab a', _this._tabbar).removeClass('active');
-        event.preventDefault();
-        return panel.trigger('active');
-      });
-    };
-
-    Manager.prototype._removeTab = function(panel) {
-      return $("#panel_tab_" + panel.cid).remove();
-    };
-
-    Manager.prototype._save = function(event) {
-      if (event) {
-        event.preventDefault();
-      }
-      if (!this.model) {
-        return false;
-      }
-      return this.model.save;
-    };
-
-    return Manager;
-
-  })(Backbone.View);
-
-  /*
-  
-  The interface contains one or more panels, which are used to 
-  edit / manage a deliverable and its contexts.
-  */
-
-
-  Panels = (function(_super) {
-
-    __extends(Panels, _super);
-
-    function Panels() {
-      this._add = __bind(this._add, this);
-
-      this.remove = __bind(this.remove, this);
-
-      this.removeAll = __bind(this.removeAll, this);
-
-      this.change = __bind(this.change, this);
-
-      this.add = __bind(this.add, this);
-      return Panels.__super__.constructor.apply(this, arguments);
-    }
-
-    Panels.prototype.tagName = 'div';
-
-    Panels.prototype.className = 'panels';
-
-    Panels.prototype.initialize = function() {
-      this.panels = [];
-      this.on('change', this.change);
-      return this.add.apply(this, arguments);
-    };
-
-    Panels.prototype.add = function() {
-      var panel, panels, _i, _len, _ref;
-      panels = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      _ref = _.flatten([panels]);
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        panel = _ref[_i];
-        this._add(panel);
-      }
-      return this;
-    };
-
-    Panels.prototype.change = function() {
-      var args, current, panel, _i, _len, _ref, _results;
-      current = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
-      _ref = this.panels;
-      _results = [];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        panel = _ref[_i];
-        if (panel === current) {
-          _results.push(panel.activate.apply(panel, args));
-        } else {
-          panel.trigger('inactive');
-          _results.push(panel.deactivate.apply(panel, args));
-        }
-      }
-      return _results;
-    };
-
-    Panels.prototype.removeAll = function() {
-      return this.remove.apply(this, this.panels);
-    };
-
-    Panels.prototype.remove = function() {
-      var panel, panels, _i, _len, _ref, _results;
-      panels = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      _ref = _.flatten([panels]);
-      _results = [];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        panel = _ref[_i];
-        _results.push(panel.remove());
-      }
-      return _results;
-    };
-
-    Panels.prototype._add = function(panel) {
-      var _this = this;
-      panel.on('active', function() {
-        var args;
-        args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-        $("#panel_tab_" + panel.cid).addClass('active');
-        return _this.trigger.apply(_this, ['change', panel].concat(__slice.call(args)));
-      });
-      panel.on('remove', function() {
-        var args;
-        args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-        if (_this.panels.indexOf(panel) !== -1) {
-          _this.panels.splice(_this.panels.indexOf(panel), 1);
-        }
-        return _this.trigger.apply(_this, ['remove', panel].concat(__slice.call(args)));
-      });
-      this.panels.push(panel);
-      this.trigger('add', panel);
-      return this.$el.append(panel.render().$el);
-    };
-
-    return Panels;
-
-  })(Backbone.View);
-
-  Panel = (function(_super) {
-
-    __extends(Panel, _super);
-
-    function Panel() {
-      return Panel.__super__.constructor.apply(this, arguments);
-    }
-
-    Panel.prototype.tagName = 'div';
-
-    Panel.prototype.className = 'transit-panel';
-
-    Panel.prototype.title = 'Detail';
-
-    Panel.prototype.icon = '';
-
-    Panel.prototype.active = false;
-
-    Panel.prototype.initialize = function() {
-      return _.bindAll(this);
-    };
-
-    Panel.prototype.activate = function() {
-      this.active = true;
-      return this.$el.addClass('active');
-    };
-
-    Panel.prototype.deactivate = function() {
-      this.active = false;
-      return this.$el.removeClass('active');
-    };
-
-    Panel.prototype.remove = function() {
-      Panel.__super__.remove.apply(this, arguments);
-      return this.trigger('remove', this);
-    };
-
-    return Panel;
-
-  })(Backbone.View);
-
-  Transit.Manager = new Manager();
-
-  Transit.Panel = Panel;
+  Transit.Notify = new Notify();
 
   if (typeof module !== "undefined" && module !== null) {
-    module.exports = {
-      Panel: Panel,
-      Manager: Manager
-    };
+    module.exports = Transit.Notify;
+  }
+
+}).call(this);
+(function() {
+  var Uploader, XHRUploadSupport, fileApiSupport,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  Uploader = (function(_super) {
+
+    __extends(Uploader, _super);
+
+    Uploader.prototype.tagName = 'div';
+
+    Uploader.prototype.className = 'transit-uploader';
+
+    Uploader.prototype["native"] = true;
+
+    function Uploader() {
+      Uploader.__super__.constructor.apply(this, arguments);
+      this["native"] = XHRUploadSupport();
+      this.$el.attr('id', 'transit_uploader');
+    }
+
+    return Uploader;
+
+  })(Backbone.View);
+
+  XHRUploadSupport = function() {
+    var xhr;
+    if (XMLHttpRequest === void 0) {
+      return false;
+    }
+    xhr = new XMLHttpRequest();
+    if (xhr['upload'] === void 0) {
+      return false;
+    }
+    return xhr.upload['onprogress'] !== void 0;
+  };
+
+  fileApiSupport = function() {
+    var input;
+    input = document.createElement('INPUT');
+    input.type = 'file';
+    return input['files'] !== void 0;
+  };
+
+  Transit.Uploader = new Uploader();
+
+  if (typeof module !== "undefined" && module !== null) {
+    module.exports = Transit.Uploader;
   }
 
 }).call(this);
@@ -621,6 +437,81 @@ sensible defaults for all models to inherit.
 
 /*
 
+All deliverables can contain one or more assets.
+*/
+
+
+(function() {
+  var Asset, Assets,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  Asset = (function(_super) {
+
+    __extends(Asset, _super);
+
+    function Asset() {
+      return Asset.__super__.constructor.apply(this, arguments);
+    }
+
+    Asset.prototype.defaults = {
+      deliverable_id: null,
+      deliverable_type: null,
+      urls: [],
+      url: null,
+      image: true,
+      filename: null
+    };
+
+    Asset.prototype.isImage = function() {
+      return this.get('image');
+    };
+
+    return Asset;
+
+  })(Backbone.Model);
+
+  Assets = (function(_super) {
+
+    __extends(Assets, _super);
+
+    function Assets() {
+      return Assets.__super__.constructor.apply(this, arguments);
+    }
+
+    Assets.prototype.model = Asset;
+
+    Assets.prototype.url = function() {
+      return Transit.settings.asset_path;
+    };
+
+    Assets.prototype.fetch = function(options) {
+      if (options == null) {
+        options = {};
+      }
+      options.data = this.deliverable;
+      return Backbone.Collection.prototype.fetch.apply(this, [options]);
+    };
+
+    return Assets;
+
+  })(Backbone.Collection);
+
+  Transit.Asset = Asset;
+
+  Transit.Assets = Assets;
+
+  if (typeof module !== "undefined" && module !== null) {
+    module.exports = {
+      Asset: Asset,
+      Assets: Assets
+    };
+  }
+
+}).call(this);
+
+/*
+
 Context view class.
 */
 
@@ -643,5 +534,337 @@ Context view class.
   })(Backbone.View);
 
   Transit.set('view', 'Context', Context);
+
+}).call(this);
+
+/*
+
+The manager contains the global "shell" that contains
+all additional ui elements
+*/
+
+
+(function() {
+  var Manager, TabBar,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+    __slice = [].slice;
+
+  Manager = (function(_super) {
+
+    __extends(Manager, _super);
+
+    function Manager() {
+      this._save = __bind(this._save, this);
+
+      this.show = __bind(this.show, this);
+
+      this.set = __bind(this.set, this);
+
+      this.render = __bind(this.render, this);
+
+      this.hide = __bind(this.hide, this);
+      return Manager.__super__.constructor.apply(this, arguments);
+    }
+
+    Manager.prototype.tagName = 'div';
+
+    Manager.prototype.className = 'transit-ui';
+
+    Manager.prototype.events = {
+      'click button.save': '_save'
+    };
+
+    Manager.prototype.heading = null;
+
+    Manager.prototype.tabBar = null;
+
+    Manager.prototype.panels = [];
+
+    Manager.prototype.initialize = function() {
+      this.tabBar = new TabBar();
+      return Transit.one('init', this.render);
+    };
+
+    Manager.prototype.add = function() {
+      var panel, panels, _i, _len, _results,
+        _this = this;
+      panels = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      _results = [];
+      for (_i = 0, _len = panels.length; _i < _len; _i++) {
+        panel = panels[_i];
+        if (_.indexOf(this.panels, panel.cid, true) === -1) {
+          this.$('div.panels').append(panel.render().$el);
+          this.tabBar.append(panel.cid, panel.title);
+          this.panels.push(panel.cid);
+          this.panels = _.unique(this.panels);
+          panel.on('active', function() {
+            return _this.tabBar.find(panel.cid).find('a').click();
+          });
+          _results.push(panel.on('remove', function() {
+            return _this.tabBar.remove(panel.cid);
+          }));
+        } else {
+          _results.push(void 0);
+        }
+      }
+      return _results;
+    };
+
+    Manager.prototype.append = function(node) {
+      return this.$el.append(node);
+    };
+
+    Manager.prototype.attach = function(model) {
+      this.model = model;
+      return this;
+    };
+
+    Manager.prototype.hide = function() {
+      this.$el.addClass('hidden');
+      $('html').addClass('transit-ui-hidden').removeClass('transit-ui-active');
+      Transit.trigger('ui:hide');
+      return this;
+    };
+
+    Manager.prototype.prepend = function(node) {
+      return this.$el.prepend(node);
+    };
+
+    Manager.prototype.render = function() {
+      if ($('#transit_ui').length === 0) {
+        Manager.__super__.render.apply(this, arguments);
+        $('html').addClass('transit-ui-hidden');
+        this.$el.addClass('hidden').append("<h1>Title</h1>").append(this.tabBar.el).append("<div class='panels'></div>").attr('id', 'transit_ui').appendTo($('body'));
+        this.heading = this.$('h1');
+        this.tabBar.el.find('a:eq(0)').click();
+      }
+      return this;
+    };
+
+    Manager.prototype.set = function(prop, value) {
+      switch (prop) {
+        case 'heading':
+          this.heading.html(value);
+          break;
+        default:
+          return false;
+      }
+      return true;
+    };
+
+    Manager.prototype.show = function() {
+      this.$el.removeClass('hidden');
+      $('html').removeClass('transit-ui-hidden').addClass('transit-ui-active');
+      Transit.trigger('ui:show');
+      return this;
+    };
+
+    Manager.prototype._save = function(event) {
+      if (event) {
+        event.preventDefault();
+      }
+      if (!this.model) {
+        return false;
+      }
+      return this.model.save;
+    };
+
+    return Manager;
+
+  })(Backbone.View);
+
+  TabBar = (function() {
+
+    TabBar.prototype.el = null;
+
+    TabBar.prototype.list = null;
+
+    TabBar.prototype.tabs = {};
+
+    function TabBar() {
+      this.remove = __bind(this.remove, this);
+
+      this.prepend = __bind(this.prepend, this);
+
+      this.make = __bind(this.make, this);
+
+      this.insert = __bind(this.insert, this);
+
+      this.find = __bind(this.find, this);
+
+      this.change = __bind(this.change, this);
+
+      this.append = __bind(this.append, this);
+
+      var id, tab, _ref;
+      this.tabs = {};
+      this.el = $('\
+      <div class="navbar">\
+        <div class="navbar-inner">\
+          <ul class = "transit-tab-bar nav"></ul>\
+        </div>\
+      </div>');
+      this.list = this.el.find('ul.transit-tab-bar');
+      _ref = this.tabs;
+      for (id in _ref) {
+        tab = _ref[id];
+        this.el.append(tab);
+      }
+      this;
+
+    }
+
+    TabBar.prototype.append = function() {
+      var args;
+      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      return this.list.append(this.make.apply(this, args));
+    };
+
+    TabBar.prototype.change = function(next) {
+      $('li', this.list).removeClass('active');
+      if (this.find(next) === void 0) {
+        return true;
+      }
+      this.find(next).addClass('active');
+      return this;
+    };
+
+    TabBar.prototype.find = function(id) {
+      return $(this.tabs[id]);
+    };
+
+    TabBar.prototype.insert = function() {
+      var args, at, item;
+      at = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
+      item = this.make.apply(this, args);
+      if (at < _.size(this.tabs)) {
+        return this.el.append(item);
+      }
+      return this.list.find('> li').eq(at).after(item);
+    };
+
+    TabBar.prototype.make = function(id, text, options) {
+      var item, link, option, value;
+      if (options == null) {
+        options = {};
+      }
+      item = $('<li></li>');
+      link = $('<a></a>').text(text);
+      if (this.tabs[id] !== void 0) {
+        return this.tabs[id];
+      }
+      for (option in options) {
+        value = options[option];
+        switch (option) {
+          case 'class':
+            link.addClass(value);
+            break;
+          case 'icon':
+            link.prepend($("<i></i>").addClass("icon-" + value));
+            break;
+          default:
+            link.attr(option, value);
+        }
+      }
+      link.attr({
+        href: "#transit_panel_" + id,
+        "data-toggle": 'tab'
+      }).text(text);
+      item.append(link);
+      this.tabs[id] = item;
+      return item;
+    };
+
+    TabBar.prototype.prepend = function(id, text, options) {
+      if (options == null) {
+        options = {};
+      }
+      return this.list.prepend(this.make(id, text, options));
+    };
+
+    TabBar.prototype.remove = function(id) {
+      return this.find(id).remove();
+    };
+
+    return TabBar;
+
+  })();
+
+  Transit.Manager = new Manager();
+
+  if (typeof module !== "undefined" && module !== null) {
+    module.exports = Transit.Manager;
+  }
+
+}).call(this);
+(function() {
+  var Panel,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  Panel = (function(_super) {
+
+    __extends(Panel, _super);
+
+    Panel.prototype.tagName = 'div';
+
+    Panel.prototype.className = 'transit-panel';
+
+    Panel.prototype.title = 'Detail';
+
+    Panel.prototype.icon = '';
+
+    Panel.prototype.active = false;
+
+    function Panel() {
+      this.remove = __bind(this.remove, this);
+
+      this.deactivate = __bind(this.deactivate, this);
+
+      this.activate = __bind(this.activate, this);
+
+      this.initialize = __bind(this.initialize, this);
+
+      var prop, _i, _len, _ref;
+      Panel.__super__.constructor.apply(this, arguments);
+      _ref = ['title', 'icon'];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        prop = _ref[_i];
+        if (this.options[prop] !== void 0) {
+          this[prop] = this.options[prop];
+        }
+      }
+      this.$el.attr("id", "transit_panel_" + this.cid);
+    }
+
+    Panel.prototype.initialize = function() {};
+
+    Panel.prototype.activate = function() {
+      this.active = true;
+      return this.$el.addClass('active');
+    };
+
+    Panel.prototype.deactivate = function() {
+      this.active = false;
+      return this.$el.removeClass('active');
+    };
+
+    Panel.prototype.remove = function() {
+      Panel.__super__.remove.apply(this, arguments);
+      return this.trigger('remove', this);
+    };
+
+    return Panel;
+
+  })(Backbone.View);
+
+  Transit.Panel = Panel;
+
+  if (typeof module !== "undefined" && module !== null) {
+    module.exports = Transit.Panel;
+  }
 
 }).call(this);
