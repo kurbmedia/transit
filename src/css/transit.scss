@@ -1,19 +1,53 @@
 @import 'compass/css3';
+@import './bootstrap/variables';
+@import './bootstrap/mixins';
+
+$transit-blue:#2486B6;
+$iconSpritePath:          "assets/glyphicons-halflings.png";
+$iconWhiteSpritePath:     "assets/glyphicons-halflings-white.png";
+
 
 body{ background:#efefef; font:12px 'Helvetica Nueue', 'Helvetica', 'Arial', sans-serif; color:black; }
 html.transit-ui-active{ margin-right:310px; }
 html.transit-ui-hidden{ margin-right:0; }
-#transit_ui{ position:fixed; top:0; right:0; bottom:0px; min-width:300px; padding:10px 10px 10px 15px;
-  @include transition(right .5s ease-in-out); @include background-image(linear-gradient(left, rgba(black, 0.8) 0%, rgba(black, 0.6) 15px, rgba(black, 0.6) 100%));
-  border-left:1px solid black;
+#transit_ui{ position:fixed; top:0; right:0; bottom:0px; min-width:300px;
+  @import "./bootstrap/type";
+  @import "./bootstrap/forms";
+  @import "./bootstrap/sprites";
+  @import "./bootstrap/dropdowns";
+  @import "./bootstrap/wells";
+  @import "./bootstrap/component-animations";
+  @import "./bootstrap/close";
+  @import "./bootstrap/buttons";
+  @import "./bootstrap/button-groups";
+  @import "./bootstrap/alerts";
+  @import "./bootstrap/navs";
+  @import "./bootstrap/navbar";
+  @import "./bootstrap/breadcrumbs";
+  @import "./bootstrap/pagination";
+  @import "./bootstrap/pager";
+  @import "./bootstrap/modals";
+  @import "./bootstrap/tooltip";
+  @import "./bootstrap/popovers";
+  @import "./bootstrap/thumbnails";
+  @import "./bootstrap/labels-badges";
+  @import "./bootstrap/progress-bars";
+  @import "./bootstrap/accordion";
+  @import "./bootstrap/utilities"; 
+  
+  @include background-image(linear-gradient(left, rgba(black, 0.8) 0%, rgba(black, 0.6) 15px, rgba(black, 0.6) 100%));
+  border-left:1px solid black; @include transition(right .3s ease-in-out); 
   &.hidden{ right:-400px; }
-  h1{ vertical-align:middle; @include background-image(linear-gradient(#2486B6 0%, darken(#2486B6, 7%) 100%)); color:white; margin:0; 
-    text-indent:1em; font-size:14px; font-weight:normal; line-height:3; text-shadow:darken(#2486B6, 8%) 1px 1px 0;
+  button.save{ position:absolute; top:1.5em; right:20px; }
+}
+
+#transit_ui_toolbar{ margin:10px 10px 10px 15px; min-width:300px; background:white; padding:5px; border-bottom:5px solid rgba(black, 0.7); 
+  h1{ vertical-align:middle; @include background-image(linear-gradient($transit-blue 0%, darken($transit-blue, 7%) 100%)); color:white; margin:0; 
+    text-indent:1em; font-size:14px; font-weight:normal; line-height:3; text-shadow:darken($transit-blue, 8%) 1px 1px 0;
   }
   div.navbar{ margin-bottom:0; border-radius:0; }
   div.navbar-inner{ border-radius:0; }
-  button.save{ position:absolute; top:1.25em; right:20px; }
-  div.panels{ margin:0 0 1em 0; padding:2em 1em 1em 1em; background:white; min-height:150px; border-bottom:5px solid rgba(black, 0.7); }
+  div.panels{ margin:0 0 1em 0; padding:2em 5px 1em 5px; background:white; min-height:150px; }
   div.transit-panel{ display:none; 
     &.active{ display:block; }
   }

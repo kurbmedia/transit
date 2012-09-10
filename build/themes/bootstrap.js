@@ -1,6 +1,6 @@
 (function() {
 
-  Transit.template.set('transit/ui/save-button', '<button class="save btn primary"><%= text %></button>');
+  Transit.template.set('transit/ui/save-button', '<button class="save btn primary"><i class="icon-ok"></i> <%= text %></button>');
 
   Transit.template.set('transit/ui/tab-bar', '\
   <div class="navbar">\

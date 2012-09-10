@@ -10,7 +10,7 @@
     <title>Transit</title>    
     <meta name="author" content="kurb media" />
     <link rel="stylesheet" href="transit.css" media="all" />
-    <link rel="stylesheet" href="assets/bootstrap.css" media="all" />
+    <!-- <link rel="stylesheet" href="assets/bootstrap.css" media="all" /> -->
 </head>
 <body>
     <div id="wrapper">
@@ -28,10 +28,10 @@
             var Page, panel, content 
             Page = new Transit.Deliverable();
             Transit.init(Page);
-            Transit.Manager.set('heading', 'Manage Page');
+            Transit.Toolbar.set('heading', 'Manage Page');
             panel   = new Transit.Panel({title: 'Info'});
             content = new Transit.Panel({ title: 'Content' });
-            Transit.Manager.add(panel, content);
+            Transit.Toolbar.add(panel, content);
             Transit.Manager.append(Transit.cache.get('tpl', 'transit/ui/save-button')({ text: 'Save' }));
             window.Page = Page;
             Transit.Manager.show();

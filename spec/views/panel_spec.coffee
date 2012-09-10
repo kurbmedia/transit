@@ -1,4 +1,4 @@
-describe 'Manager panels', ()->
+describe 'Toolbar panels', ()->
   
   panel  = new Transit.Panel()
   panel2 = new Transit.Panel()
@@ -10,9 +10,9 @@ describe 'Manager panels', ()->
   
   beforeEach ()-> 
     Transit.init(item)
-    panels = Transit.Manager.$('div.panels')
-    tabs   = Transit.Manager.tabBar
-    Transit.Manager.panels = []
+    panels = Transit.Toolbar.$('div.panels')
+    tabs   = Transit.Toolbar.tabBar
+    Transit.Toolbar.panels = []
   
   describe 'Panels', ()->
     
@@ -20,7 +20,7 @@ describe 'Manager panels', ()->
       tab = null
       
       beforeEach ()->
-        Transit.Manager.add(panel)
+        Transit.Toolbar.add(panel)
         tab = tabs.tabs[panel.cid]
       
       it 'adds a tab to the tab bar', ()->
@@ -42,7 +42,7 @@ describe 'Manager panels', ()->
     describe 'calling .remove on a panel', ()->
       
       beforeEach ()->
-        Transit.Manager.add(panel)
+        Transit.Toolbar.add(panel)
         panel.remove()
         panels = Transit.Manager.$('div.panels')
         

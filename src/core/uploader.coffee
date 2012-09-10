@@ -1,14 +1,3 @@
-class Uploader extends Backbone.View
-  tagName: 'div'
-  className: 'transit-uploader'
-  native: true
-
-  constructor:->
-    super
-    @native = XHRUploadSupport()
-    @$el.attr('id', 'transit_uploader')
-    
-
 # Support detection
 XHRUploadSupport = ()->
   if XMLHttpRequest is undefined then return false
@@ -21,8 +10,15 @@ fileApiSupport = ()->
   input.type = 'file'
   input['files'] isnt undefined
 
+
+class Uploader extends Backbone.View
+  tagName: 'div'
+  className: 'transit-uploader'
+  @native: XHRUploadSupport()
+
+
 ##
 # Expose object
 #
-Transit.Uploader = new Uploader()
+Transit.Uploader = Uploader
 module?.exports = Transit.Uploader

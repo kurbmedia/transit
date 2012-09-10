@@ -181,26 +181,6 @@
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  Uploader = (function(_super) {
-
-    __extends(Uploader, _super);
-
-    Uploader.prototype.tagName = 'div';
-
-    Uploader.prototype.className = 'transit-uploader';
-
-    Uploader.prototype["native"] = true;
-
-    function Uploader() {
-      Uploader.__super__.constructor.apply(this, arguments);
-      this["native"] = XHRUploadSupport();
-      this.$el.attr('id', 'transit_uploader');
-    }
-
-    return Uploader;
-
-  })(Backbone.View);
-
   XHRUploadSupport = function() {
     var xhr;
     if (XMLHttpRequest === void 0) {
@@ -220,7 +200,25 @@
     return input['files'] !== void 0;
   };
 
-  Transit.Uploader = new Uploader();
+  Uploader = (function(_super) {
+
+    __extends(Uploader, _super);
+
+    function Uploader() {
+      return Uploader.__super__.constructor.apply(this, arguments);
+    }
+
+    Uploader.prototype.tagName = 'div';
+
+    Uploader.prototype.className = 'transit-uploader';
+
+    Uploader["native"] = XHRUploadSupport();
+
+    return Uploader;
+
+  })(Backbone.View);
+
+  Transit.Uploader = Uploader;
 
   if (typeof module !== "undefined" && module !== null) {
     module.exports = Transit.Uploader;
@@ -545,11 +543,10 @@ all additional ui elements
 
 
 (function() {
-  var Manager, TabBar,
+  var Manager,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-    __slice = [].slice;
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
   Manager = (function(_super) {
 
@@ -559,8 +556,6 @@ all additional ui elements
       this._save = __bind(this._save, this);
 
       this.show = __bind(this.show, this);
-
-      this.set = __bind(this.set, this);
 
       this.render = __bind(this.render, this);
 
@@ -576,40 +571,10 @@ all additional ui elements
       'click button.save': '_save'
     };
 
-    Manager.prototype.heading = null;
-
-    Manager.prototype.tabBar = null;
-
-    Manager.prototype.panels = [];
+    Manager.prototype.toolBar = null;
 
     Manager.prototype.initialize = function() {
-      this.tabBar = new TabBar();
       return Transit.one('init', this.render);
-    };
-
-    Manager.prototype.add = function() {
-      var panel, panels, _i, _len, _results,
-        _this = this;
-      panels = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      _results = [];
-      for (_i = 0, _len = panels.length; _i < _len; _i++) {
-        panel = panels[_i];
-        if (_.indexOf(this.panels, panel.cid, true) === -1) {
-          this.$('div.panels').append(panel.render().$el);
-          this.tabBar.append(panel.cid, panel.title);
-          this.panels.push(panel.cid);
-          this.panels = _.unique(this.panels);
-          panel.on('active', function() {
-            return _this.tabBar.find(panel.cid).find('a').click();
-          });
-          _results.push(panel.on('remove', function() {
-            return _this.tabBar.remove(panel.cid);
-          }));
-        } else {
-          _results.push(void 0);
-        }
-      }
-      return _results;
     };
 
     Manager.prototype.append = function(node) {
@@ -636,22 +601,13 @@ all additional ui elements
       if ($('#transit_ui').length === 0) {
         Manager.__super__.render.apply(this, arguments);
         $('html').addClass('transit-ui-hidden');
-        this.$el.addClass('hidden').append("<h1>Title</h1>").append(this.tabBar.el).append("<div class='panels'></div>").attr('id', 'transit_ui').appendTo($('body'));
-        this.heading = this.$('h1');
-        this.tabBar.el.find('a:eq(0)').click();
+        this.$el.addClass('hidden').attr('id', 'transit_ui').appendTo($('body'));
+        if (this.toolBar === null) {
+          this.toolBar = Transit.Toolbar = new Transit.Toolbar();
+          this.append(this.toolBar.$el);
+        }
       }
       return this;
-    };
-
-    Manager.prototype.set = function(prop, value) {
-      switch (prop) {
-        case 'heading':
-          this.heading.html(value);
-          break;
-        default:
-          return false;
-      }
-      return true;
     };
 
     Manager.prototype.show = function() {
@@ -672,6 +628,105 @@ all additional ui elements
     };
 
     return Manager;
+
+  })(Backbone.View);
+
+  Transit.Manager = new Manager();
+
+  if (typeof module !== "undefined" && module !== null) {
+    module.exports = Transit.Manager;
+  }
+
+}).call(this);
+
+/*
+
+The Toolbar is the view that contains all of the editing / management
+panels within the UI. Panels can be added/removed as necessary to extend the 
+functionality of the manager.
+*/
+
+
+(function() {
+  var TabBar, Toolbar,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+    __slice = [].slice;
+
+  Toolbar = (function(_super) {
+
+    __extends(Toolbar, _super);
+
+    Toolbar.prototype.panels = [];
+
+    Toolbar.prototype.tabBar = null;
+
+    Toolbar.prototype.heading = null;
+
+    Toolbar.prototype.tagName = 'div';
+
+    Toolbar.prototype.className = 'transit-toolbar';
+
+    function Toolbar() {
+      this.set = __bind(this.set, this);
+      Toolbar.__super__.constructor.apply(this, arguments);
+      this.$el.attr('id', 'transit_ui_toolbar');
+    }
+
+    Toolbar.prototype.initialize = function() {
+      Toolbar.__super__.initialize.apply(this, arguments);
+      return this.render();
+    };
+
+    Toolbar.prototype.add = function() {
+      var panel, panels, _i, _len, _results,
+        _this = this;
+      panels = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      _results = [];
+      for (_i = 0, _len = panels.length; _i < _len; _i++) {
+        panel = panels[_i];
+        if (_.indexOf(this.panels, panel.cid, true) === -1) {
+          this.$('div.panels').append(panel.render().$el);
+          this.tabBar.append(panel.cid, panel.title);
+          this.panels.push(panel.cid);
+          this.panels = _.unique(this.panels);
+          panel.on('active', function() {
+            return _this.tabBar.find(panel.cid).find('a').click();
+          });
+          _results.push(panel.on('remove', function() {
+            return _this.tabBar.remove(panel.cid);
+          }));
+        } else {
+          _results.push(void 0);
+        }
+      }
+      return _results;
+    };
+
+    Toolbar.prototype.render = function() {
+      Toolbar.__super__.render.apply(this, arguments);
+      if (this.tabBar === null) {
+        this.tabBar = new TabBar();
+      }
+      this.$el.append("<h1>Title</h1>").append(this.tabBar.el).append("<div class='panels'></div>");
+      this.heading = this.$('h1');
+      this.tabBar.el.find('a:eq(0)').click();
+      return this;
+    };
+
+    Toolbar.prototype.set = function(prop, value) {
+      switch (prop) {
+        case 'heading':
+          this.heading.html(value);
+          break;
+        default:
+          return false;
+      }
+      return true;
+    };
+
+    return Toolbar;
 
   })(Backbone.View);
 
@@ -792,10 +847,10 @@ all additional ui elements
 
   })();
 
-  Transit.Manager = new Manager();
+  Transit.Toolbar = Toolbar;
 
   if (typeof module !== "undefined" && module !== null) {
-    module.exports = Transit.Manager;
+    module.exports = Transit.Toolbar;
   }
 
 }).call(this);

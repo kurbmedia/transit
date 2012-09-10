@@ -17,7 +17,7 @@ path             = require 'path'
 CoffeeScript     = require 'coffee-script'
 {parser, uglify} = require 'uglify-js'
 cleanCSS         = require 'clean-css'
-
+less             = require 'less'
 
 # Javascript sources
 # Example configuration for two JS packages,
@@ -36,6 +36,7 @@ javascripts  = {
     'src/model/asset.coffee'
     'src/views/context.coffee'
     'src/views/manager.coffee'
+    'src/views/toolbar.coffee'
     'src/views/panel.coffee'
   ],
   'build/themes/bootstrap.js':[
@@ -121,15 +122,26 @@ task 'watch', 'Watch source files and build JS & CSS', ->
     )(file)
 
   fs.watchFile 'src/css/transit.scss', (curr, prev)->
-    if +curr.mtime isnt +prev.mtime
-      console.log "Compile transit.scss"
-      exec 'sass --compass -t compact src/css/transit.scss build/transit.css', (err, stdout, stderr)->
+    # try
+    #   if +curr.mtime isnt +prev.mtime
+    #     console.log "Compile transit.less"
+    #     exec './node_modules/less/bin/lessc src/css/transit.less > build/transit.css', (err, stdout, stderr)->
+    #       throw err if err
+    #       console.log "Wrote transit.css"
+    #       fs.writeFileSync "demo/transit.css", fs.readFileSync "build/transit.css"
+    #       exec './node_modules/less/bin/lessc -x src/css/transit.less > build/transit.min.css', (err, stdout, stderr)->
+    #         throw err if err
+    #         console.log "Wrote transit.min.css"
+    # catch e
+    #   print_error e
+    console.log "Compile transit.scss"
+    exec 'sass --compass -t compact src/css/transit.scss build/transit.css', (err, stdout, stderr)->
+      throw err if err
+      console.log "Wrote transit.css"
+      fs.writeFileSync "demo/transit.css", fs.readFileSync "build/transit.css"
+      exec 'sass --compass -t compressed src/css/transit.scss build/transit.min.css', (err, stdout, stderr)->
         throw err if err
-        console.log "Wrote transit.css"
-        fs.writeFileSync "demo/transit.css", fs.readFileSync "build/transit.css"
-        exec 'sass --compass -t compressed src/css/transit.scss build/transit.min.css', (err, stdout, stderr)->
-          throw err if err
-          console.log "Wrote transit.min.css"
+        console.log "Wrote transit.min.css"
 
 # Write javascript with a header
 write_javascript = (filename, body) ->
