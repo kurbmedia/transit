@@ -24,8 +24,8 @@ class Cache
 # General settings
 
 Settings =
-  base_path: '/transit'
-  view_path: '/views'
+  template_path: '/transit/views'
+  asset_path: '/transit/assets'
 
 # Template management functionality
 
@@ -35,7 +35,7 @@ Template =
   load: (path, callback)->
     self = Transit.Template
     return callback(self[path]) if self[path] isnt undefined
-    $.get("#{href(setting('view_path'))}/#{path}", (data)->
+    $.get("#{setting('template_path')}/#{path}", (data)->
       result = self.compile(data)
       self[path] = result
       callback(result)
@@ -58,17 +58,28 @@ Transit.setup = (options = {})->
   )
 
 # Add an internal event system to share across everything
-Transit.subscribe   = Backbone.Events.on
-Transit.publish     = Backbone.Events.trigger
-Transit.unsubscribe = Backbone.Events.off
+# include an additional "one" value similar to jQuery to run
+# a callback once. 
+
+Transit.on      = Backbone.Events.on
+Transit.trigger = Backbone.Events.trigger
+Transit.off     = Backbone.Events.off
+Transit.one     = (events, callback, context)->
+  callone = (args...)->
+    callback(args...)
+    Transit.off(events, callone, context)
+  Transit.on(events, callone, context)
 
 # Set and load from cache
 Transit.set = Transit.cache.set
-Transit.get = Transit.cache.get  
+Transit.get = Transit.cache.get
+
+Transit.init = (model)->
+  Transit.Manager.attach(model)
+  Transit.trigger('init')
   
-
-@Transit = Transit
-
+  
 # Internal helper functions 
 setting  = (name)-> Transit.settings[name]
-href     = (path)-> "#{setting('base_path')}#{setting('view_path')}"
+
+@Transit

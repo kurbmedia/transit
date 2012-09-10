@@ -1,6 +1,7 @@
 (function() {
-  var $, Cache, Settings, Template, Transit, href, setting,
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+  var $, Cache, Settings, Template, Transit, setting,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __slice = [].slice;
 
   $ = this.$ || Backbone.$;
 
@@ -40,8 +41,8 @@
   })();
 
   Settings = {
-    base_path: '/transit',
-    view_path: '/views'
+    template_path: '/transit/views',
+    asset_path: '/transit/assets'
   };
 
   Template = {
@@ -55,7 +56,7 @@
       if (self[path] !== void 0) {
         return callback(self[path]);
       }
-      return $.get("" + (href(setting('view_path'))) + "/" + path, function(data) {
+      return $.get("" + (setting('template_path')) + "/" + path, function(data) {
         var result;
         result = self.compile(data);
         self[path] = result;
@@ -86,129 +87,327 @@
     return Transit.settings = _.extend(Transit.settings, options);
   };
 
-  Transit.subscribe = Backbone.Events.on;
+  Transit.on = Backbone.Events.on;
 
-  Transit.publish = Backbone.Events.trigger;
+  Transit.trigger = Backbone.Events.trigger;
 
-  Transit.unsubscribe = Backbone.Events.off;
+  Transit.off = Backbone.Events.off;
+
+  Transit.one = function(events, callback, context) {
+    var callone;
+    callone = function() {
+      var args;
+      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      callback.apply(null, args);
+      return Transit.off(events, callone, context);
+    };
+    return Transit.on(events, callone, context);
+  };
 
   Transit.set = Transit.cache.set;
 
   Transit.get = Transit.cache.get;
 
-  this.Transit = Transit;
+  Transit.init = function(model) {
+    Transit.Manager.attach(model);
+    return Transit.trigger('init');
+  };
 
   setting = function(name) {
     return Transit.settings[name];
   };
 
-  href = function(path) {
-    return "" + (setting('base_path')) + (setting('view_path'));
-  };
+  this.Transit;
 
 }).call(this);
 (function() {
-  var $, Interface, Toolbar,
+  var $, Manager, Panel, Panels,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+    __slice = [].slice;
 
   $ = window.$ || Backbone.$;
 
   /*
   
-  The interface contains the global "shell" that contains
+  The manager contains the global "shell" that contains
   all additional ui elements
   */
 
 
-  Interface = (function(_super) {
+  Manager = (function(_super) {
 
-    __extends(Interface, _super);
+    __extends(Manager, _super);
 
-    function Interface() {
+    function Manager() {
+      this._save = __bind(this._save, this);
+
+      this._removeTab = __bind(this._removeTab, this);
+
+      this._addTab = __bind(this._addTab, this);
+
       this.show = __bind(this.show, this);
+
+      this.setHeading = __bind(this.setHeading, this);
 
       this.render = __bind(this.render, this);
 
       this.hide = __bind(this.hide, this);
-
-      this.attach = __bind(this.attach, this);
-      return Interface.__super__.constructor.apply(this, arguments);
+      return Manager.__super__.constructor.apply(this, arguments);
     }
 
-    Interface.prototype.tagName = 'div';
+    Manager.prototype.tagName = 'div';
 
-    Interface.prototype.className = 'transit-ui';
+    Manager.prototype.className = 'transit-ui';
 
-    Interface.prototype.Toolbar = null;
-
-    Interface.prototype.regions = [];
-
-    Interface.prototype.initialize = function() {
-      return this.Toolbar = new Toolbar();
+    Manager.prototype.events = {
+      'click button.save': '_save'
     };
 
-    Interface.prototype.attach = function(model) {
-      return this.model = model;
+    Manager.prototype.Panels = null;
+
+    Manager.prototype._heading = null;
+
+    Manager.prototype._tabbar = null;
+
+    Manager.prototype.initialize = function() {
+      Transit.one('init', this.render);
+      this.Panels = new Panels();
+      this.Panels.on('add', this._addTab);
+      return this.Panels.on('remove', this._removeTab);
     };
 
-    Interface.prototype.hide = function() {
-      this.$el.hide();
+    Manager.prototype.add = function() {
+      var panels, _ref;
+      panels = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      return (_ref = this.Panels).add.apply(_ref, panels);
+    };
+
+    Manager.prototype.append = function(node) {
+      return this.$el.append(node);
+    };
+
+    Manager.prototype.attach = function(model) {
+      this.model = model;
       return this;
     };
 
-    Interface.prototype.render = function() {
+    Manager.prototype.hide = function() {
+      this.$el.addClass('hidden');
+      $('html').addClass('transit-ui-hidden').removeClass('transit-ui-active');
+      Transit.trigger('ui:hide');
+      return this;
+    };
+
+    Manager.prototype.prepend = function(node) {
+      return this.$el.prepend(node);
+    };
+
+    Manager.prototype.render = function() {
       if ($('#transit_ui').length === 0) {
-        Interface.__super__.render.apply(this, arguments);
-        this.$el.hide().appendTo($('body'));
+        Manager.__super__.render.apply(this, arguments);
+        $('html').addClass('transit-ui-hidden');
+        this.$el.addClass('hidden').append("<h1>Title</h1>").append('<ul class="transit-tab-bar"></ul>').attr('id', 'transit_ui').appendTo($('body'));
+        this.$el.append(this.Panels.render().$el);
+        this._tabbar = this.$('ul.transit-tab-bar');
+        this._heading = this.$('h1');
       }
-      return this.$el.append(this.Toolbar.render().$el);
-    };
-
-    Interface.prototype.show = function() {
-      this.render();
-      this.show();
       return this;
     };
 
-    return Interface;
+    Manager.prototype.setHeading = function(text) {
+      return this._heading.html(text);
+    };
+
+    Manager.prototype.show = function() {
+      this.$el.removeClass('hidden');
+      $('html').removeClass('transit-ui-hidden').addClass('transit-ui-active');
+      Transit.trigger('ui:show');
+      return this;
+    };
+
+    Manager.prototype._addTab = function(panel) {
+      var _this = this;
+      this._tabbar.append("      <li class='tab' id='panel_tab_" + panel.cid + "' data-panel='" + panel.cid + "'>        <a href='#', class='" + panel.icon + "' data-panel='" + panel.cid + "'>" + panel.title + "</a>      </li>");
+      return this.$("a[data-panel='" + panel.cid + "']").on('click', function(event) {
+        $('li.tab a', _this._tabbar).removeClass('active');
+        event.preventDefault();
+        return panel.trigger('active');
+      });
+    };
+
+    Manager.prototype._removeTab = function(panel) {
+      return $("#panel_tab_" + panel.cid).remove();
+    };
+
+    Manager.prototype._save = function(event) {
+      if (event) {
+        event.preventDefault();
+      }
+      if (!this.model) {
+        return false;
+      }
+      return this.model.save;
+    };
+
+    return Manager;
 
   })(Backbone.View);
 
   /*
   
-  The interface includes one toolbar, which contains
-  action/command buttons for the active context
+  The interface contains one or more panels, which are used to 
+  edit / manage a deliverable and its contexts.
   */
 
 
-  Toolbar = (function(_super) {
+  Panels = (function(_super) {
 
-    __extends(Toolbar, _super);
+    __extends(Panels, _super);
 
-    function Toolbar() {
+    function Panels() {
+      this._add = __bind(this._add, this);
+
+      this.remove = __bind(this.remove, this);
+
+      this.removeAll = __bind(this.removeAll, this);
+
+      this.change = __bind(this.change, this);
+
       this.add = __bind(this.add, this);
-      return Toolbar.__super__.constructor.apply(this, arguments);
+      return Panels.__super__.constructor.apply(this, arguments);
     }
 
-    Toolbar.prototype.tagName = 'div';
+    Panels.prototype.tagName = 'div';
 
-    Toolbar.prototype.className = 'transit-toolbar';
+    Panels.prototype.className = 'panels';
 
-    Toolbar.prototype.add = function(item) {
-      this.$el.append($(item));
+    Panels.prototype.initialize = function() {
+      this.panels = [];
+      this.on('change', this.change);
+      return this.add.apply(this, arguments);
+    };
+
+    Panels.prototype.add = function() {
+      var panel, panels, _i, _len, _ref;
+      panels = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      _ref = _.flatten([panels]);
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        panel = _ref[_i];
+        this._add(panel);
+      }
       return this;
     };
 
-    return Toolbar;
+    Panels.prototype.change = function() {
+      var args, current, panel, _i, _len, _ref, _results;
+      current = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
+      _ref = this.panels;
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        panel = _ref[_i];
+        if (panel === current) {
+          _results.push(panel.activate.apply(panel, args));
+        } else {
+          panel.trigger('inactive');
+          _results.push(panel.deactivate.apply(panel, args));
+        }
+      }
+      return _results;
+    };
+
+    Panels.prototype.removeAll = function() {
+      return this.remove.apply(this, this.panels);
+    };
+
+    Panels.prototype.remove = function() {
+      var panel, panels, _i, _len, _ref, _results;
+      panels = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      _ref = _.flatten([panels]);
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        panel = _ref[_i];
+        _results.push(panel.remove());
+      }
+      return _results;
+    };
+
+    Panels.prototype._add = function(panel) {
+      var _this = this;
+      panel.on('active', function() {
+        var args;
+        args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+        $("#panel_tab_" + panel.cid).addClass('active');
+        return _this.trigger.apply(_this, ['change', panel].concat(__slice.call(args)));
+      });
+      panel.on('remove', function() {
+        var args;
+        args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+        if (_this.panels.indexOf(panel) !== -1) {
+          _this.panels.splice(_this.panels.indexOf(panel), 1);
+        }
+        return _this.trigger.apply(_this, ['remove', panel].concat(__slice.call(args)));
+      });
+      this.panels.push(panel);
+      this.trigger('add', panel);
+      return this.$el.append(panel.render().$el);
+    };
+
+    return Panels;
 
   })(Backbone.View);
 
-  Transit.UI = new Interface();
+  Panel = (function(_super) {
+
+    __extends(Panel, _super);
+
+    function Panel() {
+      return Panel.__super__.constructor.apply(this, arguments);
+    }
+
+    Panel.prototype.tagName = 'div';
+
+    Panel.prototype.className = 'transit-panel';
+
+    Panel.prototype.title = 'Detail';
+
+    Panel.prototype.icon = '';
+
+    Panel.prototype.active = false;
+
+    Panel.prototype.initialize = function() {
+      return _.bindAll(this);
+    };
+
+    Panel.prototype.activate = function() {
+      this.active = true;
+      return this.$el.addClass('active');
+    };
+
+    Panel.prototype.deactivate = function() {
+      this.active = false;
+      return this.$el.removeClass('active');
+    };
+
+    Panel.prototype.remove = function() {
+      Panel.__super__.remove.apply(this, arguments);
+      return this.trigger('remove', this);
+    };
+
+    return Panel;
+
+  })(Backbone.View);
+
+  Transit.Manager = new Manager();
+
+  Transit.Panel = Panel;
 
   if (typeof module !== "undefined" && module !== null) {
-    module.exports = Transit.UI;
+    module.exports = {
+      Panel: Panel,
+      Manager: Manager
+    };
   }
 
 }).call(this);

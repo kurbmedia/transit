@@ -26,7 +26,7 @@
           
   function loadSpecs(){
     jQuery.each(specs, function(ind, file){
-      var toload = "spec/" + file + "_spec.coffee";
+      var toload = "spec/" + file + "_spec.coffee?cbust=" + new Date().getTime();
       if( loaded.indexOf(toload) == -1 ){
         loaded.push(toload); 
         CoffeeScript.load(toload, finish);
@@ -44,7 +44,7 @@
     ran = true;
     setTimeout(function(){
       jasmineEnv.execute();
-    }, 200);
+    }, 500);
   }
   
 })();

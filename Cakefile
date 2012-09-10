@@ -28,7 +28,7 @@ cleanCSS         = require 'clean-css'
 javascripts  = {
   'build/transit.js': [
     'src/core.coffee'
-    'src/ui.coffee'
+    'src/manager.coffee'
     'src/model/context.coffee'
     'src/model/deliverable.coffee'
     'src/model/contexts.coffee'
@@ -71,6 +71,8 @@ task 'build:js', 'Build JS from source', build = (cb) ->
           uglify.gen_code uglify.ast_squeeze uglify.ast_mangle parser.parse code
         )
     
+    fs.writeFileSync 'demo/transit.js', fs.readFileSync 'build/transit.js'
+    
     cb() if typeof cb is 'function'
   catch e
     print_error e, file_name, file_contents
@@ -111,18 +113,16 @@ task 'watch', 'Watch source files and build JS & CSS', ->
           invoke 'build:js'
     )(file)
 
-  # Watch for changes in stylesheet files
-  for file in stylesheet_sources()
-    ((file) ->
-      fs.watchFile file, (curr, prev) ->
-        if +curr.mtime isnt +prev.mtime
-          console.log "Saw change in #{file}"
-          invoke 'build:css'
-    )(file)
-    
-  # exec 'compass watch', (err, stdout, stderr) ->
-  #     throw err if err
-  #     console.log stdout + stderr
+  fs.watchFile 'src/css/transit.scss', (curr, prev)->
+    if +curr.mtime isnt +prev.mtime
+      console.log "Compile transit.scss"
+      exec 'sass --compass -t compact src/css/transit.scss build/transit.css', (err, stdout, stderr)->
+        throw err if err
+        console.log "Wrote transit.css"
+        fs.writeFileSync "demo/transit.css", fs.readFileSync "build/transit.css"
+        exec 'sass --compass -t compressed src/css/transit.scss build/transit.min.css', (err, stdout, stderr)->
+          throw err if err
+          console.log "Wrote transit.min.css"
 
 # Write javascript with a header
 write_javascript = (filename, body) ->

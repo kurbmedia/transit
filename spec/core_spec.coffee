@@ -4,6 +4,33 @@ describe "Transit", ()->
     expect(window.Transit)
       .toBeDefined()
   
+  describe 'on .init with model', ()->
+    
+    item = new Transit.Deliverable()
+    
+    beforeEach ()-> Transit.init(item)
+    
+    it 'attaches the model to the ui', ()->
+      expect(Transit.Manager.model)
+        .toBe(item)
+    
+    it 'renders the interface', ()->
+      expect($('#transit_ui').length)
+        .toNotEqual(0)
+  
+  describe 'the .one event handler', ()->
+    
+    runs = 0
+    beforeEach ()->
+      Transit.one 'spec:init', ()->
+        runs = runs + 1
+      Transit.trigger('spec:init')
+      Transit.trigger('spec:init')
+
+    it 'only runs the callback once', ()->
+      expect(runs).toEqual(1)
+    
+    
   ##
   # Cache
   #
