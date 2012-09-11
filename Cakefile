@@ -30,6 +30,8 @@ javascripts  = {
     'src/core.coffee'
     'src/core/notify.coffee'
     'src/core/uploader.coffee'
+    'src/core/selection.coffee'
+    'src/core/browser.coffee'
     'src/model/context.coffee'
     'src/model/deliverable.coffee'
     'src/model/contexts.coffee'
@@ -38,6 +40,7 @@ javascripts  = {
     'src/views/manager.coffee'
     'src/views/toolbar.coffee'
     'src/views/panel.coffee'
+    'src/views/asset_manager.coffee'
   ],
   'build/themes/bootstrap.js':[
     'src/themes/bootstrap.coffee'

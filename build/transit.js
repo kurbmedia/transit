@@ -1,5 +1,5 @@
 (function() {
-  var Cache, Settings, Template, Transit, setting,
+  var Cache, Settings, Template, Transit, setting, _ready,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __slice = [].slice;
 
@@ -55,6 +55,8 @@
   Template = (function() {
 
     function Template() {
+      this._pathify = __bind(this._pathify, this);
+
       this.set = __bind(this.set, this);
 
       this.load = __bind(this.load, this);
@@ -74,7 +76,7 @@
       if (exists !== void 0) {
         return callback(exists);
       }
-      return $.get("" + (setting('template_path')) + "/" + path, function(data) {
+      return $.get(this._pathify(path), function(data) {
         var result;
         result = _this.compile(data);
         Transit.cache.set('tpl', path, result);
@@ -90,6 +92,14 @@
       return this;
     };
 
+    Template.prototype._pathify = function(path) {
+      if (path.indexOf(setting('template_path')) !== -1) {
+        return path;
+      } else {
+        return "" + (setting('template_path')) + "/" + (path.replace(/^\//, ''));
+      }
+    };
+
     return Template;
 
   })();
@@ -98,7 +108,7 @@
 
   Transit.cache = new Cache();
 
-  Transit.settings = Settings;
+  Transit.config = Settings;
 
   Transit.template = new Template();
 
@@ -130,6 +140,17 @@
 
   Transit.get = Transit.cache.get;
 
+  _ready = false;
+
+  jQuery(window).one('load', function() {
+    _ready = true;
+    return Transit.trigger("ready");
+  });
+
+  Transit.ready = function(callback) {
+    return Transit.one('ready', callback);
+  };
+
   Transit.init = function(model) {
     Transit.Manager.attach(model);
     return Transit.trigger('init');
@@ -138,7 +159,7 @@
   Transit.version = "0.3.0";
 
   setting = function(name) {
-    return Transit.settings[name];
+    return Transit.config[name];
   };
 
   this.Transit;
@@ -150,20 +171,46 @@
 
   Notify = (function() {
 
+    Notify.prototype.template = function() {};
+
     function Notify() {
+      this._setup = __bind(this._setup, this);
+
+      this._render = __bind(this._render, this);
+
       this.success = __bind(this.success, this);
 
       this.info = __bind(this.info, this);
 
       this.error = __bind(this.error, this);
-
+      Transit.one('ready', this._setup);
     }
 
-    Notify.prototype.error = function() {};
+    Notify.prototype.error = function(message) {
+      return this._render(message, 'error');
+    };
 
-    Notify.prototype.info = function() {};
+    Notify.prototype.info = function(message) {
+      return this._render(message, 'info');
+    };
 
-    Notify.prototype.success = function() {};
+    Notify.prototype.success = function(message) {
+      return this._render(message, 'success');
+    };
+
+    Notify.prototype._render = function(message, type) {
+      return Transit.Manager.append($(this.template({
+        message: message,
+        type: type
+      })));
+    };
+
+    Notify.prototype._setup = function() {
+      var _this = this;
+      return Transit.template.load("/transit/views/core/notification.jst", function(templ) {
+        return _this.template = templ;
+      });
+    };
 
     return Notify;
 
@@ -222,6 +269,112 @@
 
   if (typeof module !== "undefined" && module !== null) {
     module.exports = Transit.Uploader;
+  }
+
+}).call(this);
+
+/*
+
+ Selection support, provided to make working with selections and 
+ ranges easier.
+*/
+
+
+(function() {
+  var Selector;
+
+  Selector = (function() {
+
+    Selector.selection = null;
+
+    function Selector() {
+      _.bindAll(this);
+    }
+
+    Selector.prototype.cursor = function() {
+      var marker, nrange, position, range;
+      range = this.get();
+      if (range === null) {
+        return null;
+      }
+      marker = $("<span/>");
+      nrange = document.createRange();
+      nrange.setStart(range.endContainer, range.endOffset);
+      nrange.insertNode(marker.get(0));
+      position = marker.offset();
+      marker.remove();
+      return position;
+    };
+
+    Selector.prototype.get = function() {
+      var internal, selection;
+      selection = null;
+      if (window.getSelection) {
+        internal = window.getSelection();
+        selection = internal.rangeCount > 0 ? internal.getRangeAt(0) : null;
+      } else if (document.selection && document.selection.createRange) {
+        selection = document.selection.createRange();
+      }
+      return selection;
+    };
+
+    Selector.prototype.restore = function(sel) {
+      var internal;
+      if (sel == null) {
+        sel = null;
+      }
+      if (sel === null) {
+        sel = this.selection;
+      }
+      if (sel === null) {
+        return true;
+      }
+      if (window.getSelection) {
+        internal = window.getSelection();
+        internal.removeAllRanges();
+        internal.addRange(sel);
+      } else if (document.selection && sel.select) {
+        sel.select();
+      }
+      this.selection = null;
+      return this;
+    };
+
+    Selector.prototype.save = function() {
+      this.selection = this.get();
+      return this.selection;
+    };
+
+    return Selector;
+
+  })();
+
+  Transit.Selection = new Selector();
+
+  if (typeof module !== "undefined" && module !== null) {
+    module.exports = Transit.Selection;
+  }
+
+}).call(this);
+(function() {
+  var Browser, agent;
+
+  agent = navigator.userAgent;
+
+  Browser = {
+    msie: agent.indexOf("MSIE") !== -1 && agent.indexOf("Opera") === -1,
+    gecko: agent.indexOf("Gecko") !== -1 && agent.indexOf("KHTML") === -1,
+    webkit: agent.indexOf("AppleWebKit/") !== -1,
+    chrome: agent.indexOf("Chrome/") !== -1,
+    opera: agent.indexOf("Opera/") !== -1,
+    ios: /ipad|iphone|ipod/i.test(agent),
+    android: /android (\d+)/i.test(agent)
+  };
+
+  Transit.browser = Browser;
+
+  if (typeof module !== "undefined" && module !== null) {
+    module.exports = Transit.browser;
   }
 
 }).call(this);
@@ -658,7 +811,7 @@ functionality of the manager.
 
     __extends(Toolbar, _super);
 
-    Toolbar.prototype.panels = [];
+    Toolbar.prototype.panels = {};
 
     Toolbar.prototype.tabBar = null;
 
@@ -670,6 +823,10 @@ functionality of the manager.
 
     function Toolbar() {
       this.set = __bind(this.set, this);
+
+      this.reset = __bind(this.reset, this);
+
+      this.remove = __bind(this.remove, this);
       Toolbar.__super__.constructor.apply(this, arguments);
       this.$el.attr('id', 'transit_ui_toolbar');
     }
@@ -686,17 +843,18 @@ functionality of the manager.
       _results = [];
       for (_i = 0, _len = panels.length; _i < _len; _i++) {
         panel = panels[_i];
-        if (_.indexOf(this.panels, panel.cid, true) === -1) {
+        if (_.has(this.panels, panel.cid) !== true) {
           this.$('div.panels').append(panel.render().$el);
-          this.tabBar.append(panel.cid, panel.title);
-          this.panels.push(panel.cid);
-          this.panels = _.unique(this.panels);
+          this.tabBar.append(panel);
+          this.panels[panel.cid] = panel;
           panel.on('active', function() {
             return _this.tabBar.find(panel.cid).find('a').click();
           });
-          _results.push(panel.on('remove', function() {
-            return _this.tabBar.remove(panel.cid);
-          }));
+          panel.on('remove', function() {
+            _this.tabBar.remove(panel.cid);
+            return Transit.trigger("panel:removed", panel);
+          });
+          _results.push(Transit.trigger("panel:added", panel));
         } else {
           _results.push(void 0);
         }
@@ -710,9 +868,33 @@ functionality of the manager.
         this.tabBar = new TabBar();
       }
       this.$el.append("<h1>Title</h1>").append(this.tabBar.el).append("<div class='panels'></div>");
+      this.$el.wrapInner("<div class='toolbar-inner'></div>");
       this.heading = this.$('h1');
       this.tabBar.el.find('a:eq(0)').click();
       return this;
+    };
+
+    Toolbar.prototype.remove = function(panel) {
+      if (_.isString(panel)) {
+        panel = this.panels[panel];
+      }
+      if (panel === void 0) {
+        return false;
+      }
+      panel.remove();
+      delete this.panels[panel.cid];
+      return panel;
+    };
+
+    Toolbar.prototype.reset = function() {
+      var cid, panel, _ref;
+      _ref = this.panels;
+      for (cid in _ref) {
+        panel = _ref[cid];
+        panel.remove();
+        delete this.panels[cid];
+      }
+      return this.panels = {};
     };
 
     Toolbar.prototype.set = function(prop, value) {
@@ -753,28 +935,26 @@ functionality of the manager.
 
       this.append = __bind(this.append, this);
 
-      var id, tab, _ref;
+      var _this = this;
       this.tabs = {};
-      this.el = $('\
-      <div class="navbar">\
-        <div class="navbar-inner">\
-          <ul class = "transit-tab-bar nav"></ul>\
-        </div>\
-      </div>');
-      this.list = this.el.find('ul.transit-tab-bar');
-      _ref = this.tabs;
-      for (id in _ref) {
-        tab = _ref[id];
-        this.el.append(tab);
-      }
+      Transit.template.load('/transit/views/core/tab-bar.jst', function(templ) {
+        var id, tab, _ref, _results;
+        _this.el = $(templ());
+        _this.list = _this.el.find('ul.transit-tab-bar');
+        _ref = _this.tabs;
+        _results = [];
+        for (id in _ref) {
+          tab = _ref[id];
+          _results.push(_this.el.append(tab));
+        }
+        return _results;
+      });
       this;
 
     }
 
-    TabBar.prototype.append = function() {
-      var args;
-      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      return this.list.append(this.make.apply(this, args));
+    TabBar.prototype.append = function(panel) {
+      return this.list.append(this.make(panel));
     };
 
     TabBar.prototype.change = function(next) {
@@ -790,23 +970,22 @@ functionality of the manager.
       return $(this.tabs[id]);
     };
 
-    TabBar.prototype.insert = function() {
-      var args, at, item;
-      at = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
-      item = this.make.apply(this, args);
+    TabBar.prototype.insert = function(at, panel) {
+      var item;
+      item = this.make(panel);
       if (at < _.size(this.tabs)) {
         return this.el.append(item);
       }
       return this.list.find('> li').eq(at).after(item);
     };
 
-    TabBar.prototype.make = function(id, text, options) {
-      var item, link, option, value;
-      if (options == null) {
-        options = {};
-      }
+    TabBar.prototype.make = function(panel) {
+      var id, item, link, option, options, text, value;
+      id = panel.cid;
+      text = panel.title;
       item = $('<li></li>');
       link = $('<a></a>').text(text);
+      options = _.pick(panel, 'class', 'icon', 'id', 'href', 'rel', 'target');
       if (this.tabs[id] !== void 0) {
         return this.tabs[id];
       }
@@ -823,20 +1002,22 @@ functionality of the manager.
             link.attr(option, value);
         }
       }
+      if (panel.$el.attr("id") === void 0) {
+        panel.$el.attr('id', "#transit_panel_" + cid);
+      }
       link.attr({
-        href: "#transit_panel_" + id,
+        href: panel.$el.attr('id'),
         "data-toggle": 'tab'
       }).text(text);
-      item.append(link);
+      item.append(link).attr({
+        id: "#transit_panel_tab_" + id
+      });
       this.tabs[id] = item;
       return item;
     };
 
-    TabBar.prototype.prepend = function(id, text, options) {
-      if (options == null) {
-        options = {};
-      }
-      return this.list.prepend(this.make(id, text, options));
+    TabBar.prototype.prepend = function(panel) {
+      return this.list.prepend(this.make(panel));
     };
 
     TabBar.prototype.remove = function(id) {
@@ -892,7 +1073,9 @@ functionality of the manager.
           this[prop] = this.options[prop];
         }
       }
-      this.$el.attr("id", "transit_panel_" + this.cid);
+      if (this.$el.attr('id') === void 0) {
+        this.$el.attr("id", "transit_panel_" + this.cid);
+      }
     }
 
     Panel.prototype.initialize = function() {};
@@ -920,6 +1103,45 @@ functionality of the manager.
 
   if (typeof module !== "undefined" && module !== null) {
     module.exports = Transit.Panel;
+  }
+
+}).call(this);
+(function() {
+  var AssetManager,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  AssetManager = (function(_super) {
+
+    __extends(AssetManager, _super);
+
+    function AssetManager() {
+      this.render = __bind(this.render, this);
+      return AssetManager.__super__.constructor.apply(this, arguments);
+    }
+
+    AssetManager.prototype.uploader = null;
+
+    AssetManager.prototype.collection = null;
+
+    AssetManager.prototype.render = function() {
+      AssetManager.__super__.render.apply(this, arguments);
+      this.$el.addClass('transit-asset-manager');
+      if (this.uploader === null) {
+        this.uploader = new Transit.Uploader();
+        return this.$el.prepend(this.uploader.render().$el);
+      }
+    };
+
+    return AssetManager;
+
+  })(Transit.Panel);
+
+  Transit.AssetManager = AssetManager;
+
+  if (typeof module !== "undefined" && module !== null) {
+    module.exports = Transit.AssetManager;
   }
 
 }).call(this);

@@ -7,7 +7,7 @@ functionality of the manager.
 ###
 
 class Toolbar extends Backbone.View
-  panels: []
+  panels: {}
   tabBar: null
   heading: null
   tagName: 'div'
@@ -21,21 +21,24 @@ class Toolbar extends Backbone.View
     super
     @render()
   
+  # add one or more panels with tabs
   add:(panels...)-> 
     for panel in panels
-      if _.indexOf(@panels, panel.cid, true) is -1
+      unless _.has(@panels, panel.cid) is true
         @$('div.panels').append( panel.render().$el )
-        @tabBar.append(panel.cid, panel.title)
-        @panels.push(panel.cid)
-        @panels = _.unique( @panels )
-        
+        @tabBar.append(panel)
+        @panels[panel.cid] = panel
         panel.on 'active', ()=>
           @tabBar.find(panel.cid)
             .find('a').click()
 
         panel.on 'remove', ()=>
           @tabBar.remove(panel.cid)
+          Transit.trigger("panel:removed", panel)
+
+        Transit.trigger("panel:added", panel)
   
+  # render the toolbar
   render:()->
     super
     @tabBar = new TabBar() if @tabBar is null
@@ -43,10 +46,27 @@ class Toolbar extends Backbone.View
     @$el.append("<h1>Title</h1>")
       .append(@tabBar.el)
       .append("<div class='panels'></div>")
+    @$el.wrapInner("<div class='toolbar-inner'></div>")
     @heading = @$('h1')
     @tabBar.el.find('a:eq(0)').click()
     @
-    
+  
+  # remove a single panel
+  remove:(panel)=>
+    panel = @panels[panel] if _.isString(panel)
+    return false if panel is undefined
+    panel.remove()
+    delete @panels[panel.cid]
+    panel
+  
+  # remove all panels
+  reset:()=>
+    for cid, panel of @panels
+      panel.remove()
+      delete @panels[cid]
+    @panels = {}
+  
+  # set a property or attribute on the toolbar
   set: (prop, value)=>
     switch prop
       when 'heading' then @heading.html(value)
@@ -61,18 +81,13 @@ class TabBar
   tabs: {}
   constructor: -> 
     @tabs = {}
-    @el   = $('
-      <div class="navbar">
-        <div class="navbar-inner">
-          <ul class = "transit-tab-bar nav"></ul>
-        </div>
-      </div>'
-    )
-    @list = @el.find('ul.transit-tab-bar')
-    @el.append(tab) for id, tab of @tabs
+    Transit.template.load '/transit/views/core/tab-bar.jst', (templ)=>
+      @el   = $(templ())
+      @list = @el.find('ul.transit-tab-bar')
+      @el.append(tab) for id, tab of @tabs
     @
   
-  append:(args...)=> @list.append( @make(args...) )
+  append:(panel)=> @list.append( @make(panel) )
   
   change: (next)=>
     $('li', @list).removeClass('active')
@@ -82,16 +97,20 @@ class TabBar
   
   find:(id)=> $(@tabs[id])
       
-  insert:(at, args...)=>
-    item = @make(args...) 
+  insert:(at, panel)=>
+    item = @make(panel) 
     if at < _.size @tabs
       return @el.append( item )
     @list.find('> li').eq(at)
       .after( item )
     
-  make:(id, text, options = {})=> 
+  make:(panel)=> 
+    id     = panel.cid
+    text   = panel.title
     item   = $('<li></li>')
     link   = $('<a></a>').text(text)
+    
+    options = _.pick(panel, 'class', 'icon', 'id', 'href', 'rel', 'target')
     
     return @tabs[id] if @tabs[id] isnt undefined
     
@@ -102,14 +121,18 @@ class TabBar
           link.prepend $("<i></i>").addClass("icon-#{value}")
         else link.attr(option, value)
     
-    link.attr( href: "#transit_panel_#{id}", "data-toggle": 'tab' )
+    if panel.$el.attr("id") is undefined
+      panel.$el.attr('id', "#transit_panel_#{cid}")
+    
+    link.attr( href: panel.$el.attr('id'), "data-toggle": 'tab' )
       .text(text)
     item.append(link)
+      .attr( id: "#transit_panel_tab_#{id}" )
 
     @tabs[id] = item
     item
   
-  prepend:(id, text, options = {})=> @list.prepend( @make(id, text, options) )
+  prepend:(panel)=> @list.prepend( @make(panel) )
   
   remove:(id)=> @find(id).remove()
 

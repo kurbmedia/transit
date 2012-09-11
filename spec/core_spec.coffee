@@ -82,6 +82,28 @@ describe "Transit", ()->
   #          
   describe 'Template', ()->
     
+    describe '._pathify', ()->
+      
+      full_path = "#{Transit.config.template_path}/core/test.jst"
+      result = ""
+      
+      describe 'when the path contains the template_path string', ()->
+        
+        beforeEach ()->
+          result = Transit.template._pathify(full_path)
+        
+        it 'returns the orignal path', ()->
+          expect(result)
+            .toEqual(full_path)
+      
+      describe 'when the path does not contain template_path', ()->
+        beforeEach ()->
+          result = Transit.template._pathify("/core/test.jst")
+        
+        it 'returns the path including the template path', ()->
+          expect(result)
+            .toEqual(full_path)
+      
     describe 'loading templates', ()->
       
       describe 'when the template is cached', ()->

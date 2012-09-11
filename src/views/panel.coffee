@@ -10,8 +10,9 @@ class Panel extends Backbone.View
     for prop in ['title', 'icon']
       if @options[prop] isnt undefined
         @[prop] = @options[prop]
-
-    @$el.attr("id", "transit_panel_#{@cid}")
+    
+    if @$el.attr('id') is undefined
+      @$el.attr("id", "transit_panel_#{@cid}")
 
   initialize:=>
     

@@ -36,7 +36,7 @@ class Template
   load: (path, callback)=>
     exists = Transit.cache.get('tpl', path)
     return callback(exists) if exists isnt undefined
-    $.get("#{setting('template_path')}/#{path}", (data)=>
+    $.get(@_pathify(path), (data)=>
       result = @compile(data)
       Transit.cache.set('tpl', path, result)
       callback(result)
@@ -46,10 +46,15 @@ class Template
       html = @compile(html)
     Transit.cache.set('tpl', name, html)
     @
+  
+  _pathify:(path)=>
+    if path.indexOf(setting('template_path')) != -1 
+      return path 
+    else "#{setting('template_path')}/#{path.replace(/^\//, '')}"
 
 Transit = @Transit = {}
 Transit.cache    = new Cache()
-Transit.settings = Settings
+Transit.config   = Settings
 Transit.template = new Template()
 
 
@@ -77,6 +82,16 @@ Transit.one     = (events, callback, context)->
 Transit.set = Transit.cache.set
 Transit.get = Transit.cache.get
 
+# functions to be called on ready
+_ready = false
+
+jQuery(window).one('load', ()->
+  _ready = true
+  Transit.trigger("ready")
+)
+
+Transit.ready = (callback)-> Transit.one('ready', callback)
+
 Transit.init = (model)->
   Transit.Manager.attach(model)
   Transit.trigger('init')
@@ -84,6 +99,6 @@ Transit.init = (model)->
 Transit.version = "0.3.0"
 
 # Internal helper functions 
-setting  = (name)-> Transit.settings[name]
+setting  = (name)-> Transit.config[name]
 
 @Transit

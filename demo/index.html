@@ -25,17 +25,20 @@
     <script type="text/javascript" charset="utf-8">
     //<![CDATA[
         (function(){
-            var Page, panel, content 
-            Page = new Transit.Deliverable();
-            Transit.init(Page);
-            Transit.Toolbar.set('heading', 'Manage Page');
-            panel   = new Transit.Panel({title: 'Info'});
-            content = new Transit.Panel({ title: 'Content' });
-            Transit.Toolbar.add(panel, content);
-            Transit.Manager.append(Transit.cache.get('tpl', 'transit/ui/save-button')({ text: 'Save' }));
-            window.Page = Page;
-            Transit.Manager.show();
-            panel.trigger('active');
+            var Page, panel, content;
+            
+            Transit.ready(function(){
+                Page = new Transit.Deliverable();
+                Transit.init(Page);
+                Transit.Toolbar.set('heading', 'Manage Page');
+                panel   = new Transit.Panel({title: 'Info'});
+                content = new Transit.Panel({ title: 'Content' });
+                Transit.Toolbar.add(panel, content);
+                Transit.Manager.append(Transit.cache.get('tpl', '/transit/views/core/save-button.jst')({ text: 'Save' }));
+                window.Page = Page;
+                Transit.Manager.show();
+                panel.trigger('active');
+            });
         })();
     //]]>
     </script>
