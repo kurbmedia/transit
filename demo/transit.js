@@ -56,7 +56,6 @@
   _.extend(Transit, {
     cache: new Cache(),
     on: Backbone.Events.on,
-    trigger: Backbone.Events.trigger,
     off: Backbone.Events.off,
     one: function(events, callback, context) {
       var callone;
@@ -68,31 +67,36 @@
       };
       return Transit.on(events, callone, context);
     },
-    set: function() {
-      var args, _ref;
-      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      return (_ref = Transit.cache).set.apply(_ref, args);
-    },
     get: function() {
       var args, _ref;
       args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
       return (_ref = Transit.cache).get.apply(_ref, args);
     },
+    manage: function(model, callback) {
+      var manager;
+      manager = new Transit.Manager({
+        model: model
+      });
+      if (Transit.status === 'ready') {
+        manager.render();
+      }
+      return manager;
+    },
     ready: function(callback) {
       return Transit.one('ready', callback);
     },
-    init: function(model) {
-      if (_ready === false) {
-        return Transit.one('ready', function() {
-          Transit.Manager.attach(model);
-          return Transit.trigger('init');
-        });
-      } else {
-        Transit.Manager.attach(model);
-        return Transit.trigger('init');
-      }
+    set: function() {
+      var args, _ref;
+      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      return (_ref = Transit.cache).set.apply(_ref, args);
     },
+    status: "pending",
+    trigger: Backbone.Events.trigger,
     version: "0.3.0"
+  });
+
+  Transit.one('ready', function() {
+    return Transit.status = "ready";
   });
 
   jQuery(window).one('load', function() {
@@ -309,17 +313,18 @@
 
 }).call(this);
 (function() {
-  var Manager,
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  Manager = (function(_super) {
+  this.Transit.Manager = (function(_super) {
 
     __extends(Manager, _super);
 
     function Manager() {
       this._save = __bind(this._save, this);
+
+      this._modal = __bind(this._modal, this);
 
       this.show = __bind(this.show, this);
 
@@ -340,15 +345,22 @@
     Manager.prototype.toolBar = null;
 
     Manager.prototype.initialize = function() {
-      return Transit.one('init', this.render);
+      Transit.one('ready', this.render);
+      return Transit.on('modal:show', this._modal);
     };
 
     Manager.prototype.append = function(node) {
       return this.$el.append(node);
     };
 
-    Manager.prototype.attach = function(model) {
+    Manager.prototype.manage = function(model, resets) {
+      if (resets == null) {
+        resets = true;
+      }
       this.model = model;
+      if (resets === true) {
+        this.toolBar.reset();
+      }
       return this;
     };
 
@@ -368,10 +380,10 @@
         Manager.__super__.render.apply(this, arguments);
         $('html').addClass('transit-ui-hidden');
         this.$el.addClass('hidden').attr('id', 'transit_ui').appendTo($('body'));
-        if (this.toolBar === null) {
-          this.toolBar = Transit.Toolbar = new Transit.Toolbar();
-          this.append(this.toolBar.$el);
-        }
+      }
+      if (this.toolBar === null) {
+        this.toolBar = new Transit.Toolbar();
+        this.append(this.toolBar.$el);
       }
       return this;
     };
@@ -381,6 +393,10 @@
       $('html').removeClass('transit-ui-hidden').addClass('transit-ui-active');
       Transit.trigger('ui:show');
       return this;
+    };
+
+    Manager.prototype._modal = function(instance) {
+      return this.append(instance.$el);
     };
 
     Manager.prototype._save = function(event) {
@@ -397,8 +413,6 @@
 
   })(Backbone.View);
 
-  this.Transit.Manager = new Manager();
-
 }).call(this);
 (function() {
   var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
@@ -413,6 +427,8 @@
       this.render = __bind(this.render, this);
 
       this.perform = __bind(this.perform, this);
+
+      this.close = __bind(this.close, this);
       return Modal.__super__.constructor.apply(this, arguments);
     }
 
@@ -421,7 +437,8 @@
         show: true
       }).one('hidden', function(event) {
         Transit.trigger('modal:close', instance);
-        return instance.trigger('close');
+        instance.trigger('close');
+        return $('div.modal-backdrop:eq(0)').remove();
       });
     };
 
@@ -441,6 +458,12 @@
         title: "Title Missing",
         content: "Content missing"
       });
+    };
+
+    Modal.prototype.close = function() {
+      this.trigger('close');
+      this.remove();
+      return this;
     };
 
     Modal.prototype.perform = function(event) {
@@ -465,7 +488,6 @@
         _this.trigger('open');
         Transit.trigger('modal:show', _this);
         _this.$el.addClass('out');
-        Transit.Manager.append(_this.$el);
         Transit.Modal.handler(_this);
         return _this.$el.removeClass('out').addClass('in');
       });
@@ -487,7 +509,8 @@
         return false;
       }
     });
-    return view.render();
+    view.render();
+    return view;
   };
 
 }).call(this);
@@ -656,12 +679,19 @@ functionality of the manager.
       this.reset = __bind(this.reset, this);
 
       this.remove = __bind(this.remove, this);
+
+      this.render = __bind(this.render, this);
+
+      this.add = __bind(this.add, this);
+
+      this.initialize = __bind(this.initialize, this);
       Toolbar.__super__.constructor.apply(this, arguments);
       this.$el.attr('id', 'transit_ui_toolbar');
     }
 
     Toolbar.prototype.initialize = function() {
       Toolbar.__super__.initialize.apply(this, arguments);
+      this.panels = {};
       return this.render();
     };
 
@@ -721,8 +751,10 @@ functionality of the manager.
       for (cid in _ref) {
         panel = _ref[cid];
         panel.remove();
+        this.tabBar.remove(panel.cid);
         delete this.panels[cid];
       }
+      this.$('div.panels > div.transit-panel').remove();
       return this.panels = {};
     };
 

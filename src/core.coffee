@@ -37,28 +37,29 @@ _.extend Transit,
   # a callback once. 
 
   on: Backbone.Events.on
-  trigger: Backbone.Events.trigger
   off: Backbone.Events.off
   one: (events, callback, context)->
     callone = (args...)->
       callback(args...)
       Transit.off(events, callone, context)
     Transit.on(events, callone, context)
-  set: (args...)-> Transit.cache.set(args...)
+
   get: (args...)-> Transit.cache.get(args...)
   
+  manage: (model, callback)->
+    manager = new Transit.Manager(model: model)
+    if Transit.status is 'ready'
+      manager.render()
+    manager
+    
   ready: (callback)-> Transit.one('ready', callback)
-  init: (model)->
-    if _ready is false
-      Transit.one('ready', ()->
-        Transit.Manager.attach(model)
-        Transit.trigger('init')
-      )
-    else 
-      Transit.Manager.attach(model)
-      Transit.trigger('init')
   
+  set: (args...)-> Transit.cache.set(args...)
+  status: "pending"
+  trigger: Backbone.Events.trigger
   version: "0.3.0"
+
+Transit.one 'ready', ()-> Transit.status = "ready"
 
 # functions to be called on ready
 

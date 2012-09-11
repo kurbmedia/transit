@@ -4,16 +4,17 @@ describe "Transit", ()->
     expect(window.Transit)
       .toBeDefined()
   
-  describe 'on .init with model', ()->
+  describe 'on .manage with model', ()->
     
-    item = new Transit.Deliverable()
+    item   = new Transit.Deliverable()
+    result = null
     
     beforeEach ()-> 
-      Transit.init(item)
+      result = Transit.manage(item)
     
-    it 'attaches the model to the ui', ()->
-      expect(Transit.Manager.model)
-        .toBe(item)
+    it 'returns an instance of the manager', ()->
+      expect(result instanceof Transit.Manager)
+        .toBeTruthy()
     
     it 'renders the interface', ()->
       expect($('#transit_ui').length)

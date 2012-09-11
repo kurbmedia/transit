@@ -4,6 +4,7 @@ class @Transit.Modal extends Backbone.View
       .one 'hidden', (event)-> 
         Transit.trigger('modal:close', instance)
         instance.trigger('close')
+        $('div.modal-backdrop:eq(0)').remove()
     
   tagName: 'div'
   className: 'transit-modal'
@@ -17,6 +18,11 @@ class @Transit.Modal extends Backbone.View
       buttons: []
       title: "Title Missing"
       content: "Content missing"
+  
+  close: ()=>
+    @trigger('close')
+    @remove()
+    @
 
   perform: (event)=>
     event.preventDefault()
@@ -36,7 +42,6 @@ class @Transit.Modal extends Backbone.View
       @trigger('open')
       Transit.trigger('modal:show', this)
       @$el.addClass('out')
-      Transit.Manager.append(@$el)
       Transit.Modal.handler(this)
       @$el.removeClass('out')
         .addClass('in')
@@ -48,3 +53,4 @@ class @Transit.Modal extends Backbone.View
   Transit.one 'modal:show', (mod)->
     return false unless mod is view
   view.render()
+  view

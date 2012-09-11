@@ -1,15 +1,21 @@
-class Manager extends Backbone.View
+class @Transit.Manager extends Backbone.View
   tagName: 'div'
   className: 'transit-ui'  
   events:
     'click button.save' : '_save'
   toolBar: null
   
-  initialize:()-> Transit.one('init', @render)
+  initialize:()-> 
+    Transit.one('ready', @render)
+    Transit.on('modal:show', @_modal)
 
   append:(node)-> @$el.append(node)
   
-  attach:(model)-> @model = model; return @
+  manage:(model, resets = true)-> 
+    @model = model
+    if resets is true
+      @toolBar.reset()
+    @
   
   hide:()=> 
     @$el.addClass('hidden') 
@@ -27,9 +33,10 @@ class Manager extends Backbone.View
       @$el.addClass('hidden')
         .attr('id', 'transit_ui')
         .appendTo($('body'))
-      if @toolBar is null
-        @toolBar = Transit.Toolbar = new Transit.Toolbar()
-        @append(@toolBar.$el)
+
+    if @toolBar is null
+      @toolBar = new Transit.Toolbar()
+      @append(@toolBar.$el)
     @
 
   show:()=> 
@@ -39,10 +46,9 @@ class Manager extends Backbone.View
     Transit.trigger('ui:show')
     @
 
+  _modal:(instance)=> @append( instance.$el )
+
   _save:(event)=>
     event.preventDefault() if event
     return false unless @model
     @model.save
-
-
-@Transit.Manager = new Manager()

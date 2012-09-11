@@ -17,12 +17,13 @@ class @Transit.Toolbar extends Backbone.View
     super
     @$el.attr('id', 'transit_ui_toolbar')
     
-  initialize:()-> 
+  initialize:()=> 
     super
+    @panels = {}
     @render()
   
   # add one or more panels with tabs
-  add:(panels...)-> 
+  add:(panels...)=> 
     for panel in panels
       unless _.has(@panels, panel.cid) is true
         @$('div.panels').append( panel.render().$el )
@@ -39,7 +40,7 @@ class @Transit.Toolbar extends Backbone.View
         Transit.trigger("panel:added", panel)
   
   # render the toolbar
-  render:()->
+  render:()=>
     super
     @tabBar = new TabBar() if @tabBar is null
     
@@ -63,7 +64,9 @@ class @Transit.Toolbar extends Backbone.View
   reset:()=>
     for cid, panel of @panels
       panel.remove()
+      @tabBar.remove(panel.cid)
       delete @panels[cid]
+    @$('div.panels > div.transit-panel').remove()
     @panels = {}
   
   # set a property or attribute on the toolbar
