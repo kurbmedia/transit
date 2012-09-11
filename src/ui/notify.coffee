@@ -9,7 +9,7 @@ class Notify
     Transit.Manager.append($(@template({ message: message, type: type })))
 
   _setup:()=> 
-    Transit.template.load "/transit/views/core/notification.jst", (templ)=>
+    Transit.tpl "/core/notification.jst", (templ)=>
       @template = templ
   
 

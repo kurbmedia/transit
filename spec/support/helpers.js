@@ -29,3 +29,14 @@ beforeEach(function(){
   });
   
 });
+
+var mockEvent = function(options){
+  if(options === void 0)
+    options = {};
+  options = _.defaults(options, {
+    preventDefault:function(){},
+    currentTarget: $('<a></a>')
+  });
+
+  return options;
+}

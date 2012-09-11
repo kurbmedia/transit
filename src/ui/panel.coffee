@@ -1,4 +1,4 @@
-class Panel extends Backbone.View
+class @Transit.Panel extends Backbone.View
   tagName: 'div'
   className: 'transit-panel'
   title: 'Detail',
@@ -23,13 +23,11 @@ class Panel extends Backbone.View
   deactivate:()=> 
     @active = false
     @$el.removeClass('active')
-    
+  
+  render:()=>
+    super
+    @
+
   remove:()=> 
     super
     @trigger('remove', @)
-
-##
-# Expose object
-#
-Transit.Panel   = Panel
-module?.exports = Transit.Panel

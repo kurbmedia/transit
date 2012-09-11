@@ -28,19 +28,26 @@ less             = require 'less'
 javascripts  = {
   'build/transit.js': [
     'src/core.coffee'
-    'src/core/notify.coffee'
-    'src/core/uploader.coffee'
-    'src/core/selection.coffee'
     'src/core/browser.coffee'
-    'src/model/context.coffee'
-    'src/model/deliverable.coffee'
-    'src/model/contexts.coffee'
+    'src/core/selection.coffee'
+    'src/core/template.coffee'
+    
+    'src/ui/manager.coffee'
+    'src/ui/modal.coffee'
+    'src/ui/notify.coffee'
+    'src/ui/panel.coffee'
+    'src/ui/toolbar.coffee'
+    'src/ui/uploader.coffee'
+    
     'src/model/asset.coffee'
-    'src/views/context.coffee'
-    'src/views/manager.coffee'
-    'src/views/toolbar.coffee'
-    'src/views/panel.coffee'
+    'src/model/assets.coffee'
+    'src/model/context.coffee'
+    'src/model/contexts.coffee'
+    'src/model/deliverable.coffee'
+    
     'src/views/asset_manager.coffee'
+    'src/views/context.coffee'
+
   ],
   'build/themes/bootstrap.js':[
     'src/themes/bootstrap.coffee'

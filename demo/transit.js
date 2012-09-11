@@ -1,7 +1,11 @@
 (function() {
-  var Cache, Settings, Template, Transit, setting, _ready,
+  var Cache, Transit, _ready, _winready,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __slice = [].slice;
+
+  _ready = true;
+
+  _winready = false;
 
   Cache = (function() {
 
@@ -47,228 +51,94 @@
 
   })();
 
-  Settings = {
-    template_path: '/transit/views',
-    asset_path: '/transit/assets'
-  };
+  Transit = {};
 
-  Template = (function() {
-
-    function Template() {
-      this._pathify = __bind(this._pathify, this);
-
-      this.set = __bind(this.set, this);
-
-      this.load = __bind(this.load, this);
-
-      this.compile = __bind(this.compile, this);
-
-    }
-
-    Template.prototype.compile = function(html) {
-      return _.template(html);
-    };
-
-    Template.prototype.load = function(path, callback) {
-      var exists,
-        _this = this;
-      exists = Transit.cache.get('tpl', path);
-      if (exists !== void 0) {
-        return callback(exists);
-      }
-      return $.get(this._pathify(path), function(data) {
-        var result;
-        result = _this.compile(data);
-        Transit.cache.set('tpl', path, result);
-        return callback(result);
-      });
-    };
-
-    Template.prototype.set = function(name, html) {
-      if (typeof html === 'string') {
-        html = this.compile(html);
-      }
-      Transit.cache.set('tpl', name, html);
-      return this;
-    };
-
-    Template.prototype._pathify = function(path) {
-      if (path.indexOf(setting('template_path')) !== -1) {
-        return path;
-      } else {
-        return "" + (setting('template_path')) + "/" + (path.replace(/^\//, ''));
-      }
-    };
-
-    return Template;
-
-  })();
-
-  Transit = this.Transit = {};
-
-  Transit.cache = new Cache();
-
-  Transit.config = Settings;
-
-  Transit.template = new Template();
-
-  Transit.setup = function(options) {
-    if (options == null) {
-      options = {};
-    }
-    return Transit.settings = _.extend(Transit.settings, options);
-  };
-
-  Transit.on = Backbone.Events.on;
-
-  Transit.trigger = Backbone.Events.trigger;
-
-  Transit.off = Backbone.Events.off;
-
-  Transit.one = function(events, callback, context) {
-    var callone;
-    callone = function() {
-      var args;
+  _.extend(Transit, {
+    cache: new Cache(),
+    on: Backbone.Events.on,
+    trigger: Backbone.Events.trigger,
+    off: Backbone.Events.off,
+    one: function(events, callback, context) {
+      var callone;
+      callone = function() {
+        var args;
+        args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+        callback.apply(null, args);
+        return Transit.off(events, callone, context);
+      };
+      return Transit.on(events, callone, context);
+    },
+    set: function() {
+      var args, _ref;
       args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      callback.apply(null, args);
-      return Transit.off(events, callone, context);
-    };
-    return Transit.on(events, callone, context);
-  };
-
-  Transit.set = Transit.cache.set;
-
-  Transit.get = Transit.cache.get;
-
-  _ready = false;
-
-  jQuery(window).one('load', function() {
-    _ready = true;
-    return Transit.trigger("ready");
+      return (_ref = Transit.cache).set.apply(_ref, args);
+    },
+    get: function() {
+      var args, _ref;
+      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      return (_ref = Transit.cache).get.apply(_ref, args);
+    },
+    ready: function(callback) {
+      return Transit.one('ready', callback);
+    },
+    init: function(model) {
+      if (_ready === false) {
+        return Transit.one('ready', function() {
+          Transit.Manager.attach(model);
+          return Transit.trigger('init');
+        });
+      } else {
+        Transit.Manager.attach(model);
+        return Transit.trigger('init');
+      }
+    },
+    version: "0.3.0"
   });
 
-  Transit.ready = function(callback) {
-    return Transit.one('ready', callback);
-  };
-
-  Transit.init = function(model) {
-    Transit.Manager.attach(model);
-    return Transit.trigger('init');
-  };
-
-  Transit.version = "0.3.0";
-
-  setting = function(name) {
-    return Transit.config[name];
-  };
-
-  this.Transit;
-
-}).call(this);
-(function() {
-  var Notify,
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
-
-  Notify = (function() {
-
-    Notify.prototype.template = function() {};
-
-    function Notify() {
-      this._setup = __bind(this._setup, this);
-
-      this._render = __bind(this._render, this);
-
-      this.success = __bind(this.success, this);
-
-      this.info = __bind(this.info, this);
-
-      this.error = __bind(this.error, this);
-      Transit.one('ready', this._setup);
+  jQuery(window).one('load', function() {
+    var counter, total;
+    _winready = true;
+    if (_ready === true) {
+      Transit.trigger("ready");
+      return true;
     }
-
-    Notify.prototype.error = function(message) {
-      return this._render(message, 'error');
-    };
-
-    Notify.prototype.info = function(message) {
-      return this._render(message, 'info');
-    };
-
-    Notify.prototype.success = function(message) {
-      return this._render(message, 'success');
-    };
-
-    Notify.prototype._render = function(message, type) {
-      return Transit.Manager.append($(this.template({
-        message: message,
-        type: type
-      })));
-    };
-
-    Notify.prototype._setup = function() {
-      var _this = this;
-      return Transit.template.load("/transit/views/core/notification.jst", function(templ) {
-        return _this.template = templ;
+    counter = 0;
+    total = _.size(Transit.template.preloads);
+    return _.each(Transit.template.preloads, function(jst) {
+      return Transit.template.load(jst, function() {
+        counter++;
+        if (counter === total) {
+          _ready = true;
+        }
+        if (_winready === true && _ready === true) {
+          return Transit.trigger('ready');
+        }
       });
-    };
+    });
+  });
 
-    return Notify;
-
-  })();
-
-  Transit.Notify = new Notify();
-
-  if (typeof module !== "undefined" && module !== null) {
-    module.exports = Transit.Notify;
-  }
+  this.Transit || (this.Transit = Transit);
 
 }).call(this);
 (function() {
-  var Uploader, XHRUploadSupport, fileApiSupport,
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+  var Browser, agent;
 
-  XHRUploadSupport = function() {
-    var xhr;
-    if (XMLHttpRequest === void 0) {
-      return false;
-    }
-    xhr = new XMLHttpRequest();
-    if (xhr['upload'] === void 0) {
-      return false;
-    }
-    return xhr.upload['onprogress'] !== void 0;
+  agent = navigator.userAgent;
+
+  Browser = {
+    msie: agent.indexOf("MSIE") !== -1 && agent.indexOf("Opera") === -1,
+    gecko: agent.indexOf("Gecko") !== -1 && agent.indexOf("KHTML") === -1,
+    webkit: agent.indexOf("AppleWebKit/") !== -1,
+    chrome: agent.indexOf("Chrome/") !== -1,
+    opera: agent.indexOf("Opera/") !== -1,
+    ios: /ipad|iphone|ipod/i.test(agent),
+    android: /android (\d+)/i.test(agent)
   };
 
-  fileApiSupport = function() {
-    var input;
-    input = document.createElement('INPUT');
-    input.type = 'file';
-    return input['files'] !== void 0;
-  };
-
-  Uploader = (function(_super) {
-
-    __extends(Uploader, _super);
-
-    function Uploader() {
-      return Uploader.__super__.constructor.apply(this, arguments);
-    }
-
-    Uploader.prototype.tagName = 'div';
-
-    Uploader.prototype.className = 'transit-uploader';
-
-    Uploader["native"] = XHRUploadSupport();
-
-    return Uploader;
-
-  })(Backbone.View);
-
-  Transit.Uploader = Uploader;
+  Transit.browser = Browser;
 
   if (typeof module !== "undefined" && module !== null) {
-    module.exports = Transit.Uploader;
+    module.exports = Transit.browser;
   }
 
 }).call(this);
@@ -357,344 +227,87 @@
 
 }).call(this);
 (function() {
-  var Browser, agent;
+  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
-  agent = navigator.userAgent;
+  this.Transit.Template = (function() {
 
-  Browser = {
-    msie: agent.indexOf("MSIE") !== -1 && agent.indexOf("Opera") === -1,
-    gecko: agent.indexOf("Gecko") !== -1 && agent.indexOf("KHTML") === -1,
-    webkit: agent.indexOf("AppleWebKit/") !== -1,
-    chrome: agent.indexOf("Chrome/") !== -1,
-    opera: agent.indexOf("Opera/") !== -1,
-    ios: /ipad|iphone|ipod/i.test(agent),
-    android: /android (\d+)/i.test(agent)
+    Template.cache = {};
+
+    Template.compile = function(html) {
+      return _.template(html);
+    };
+
+    Template.find = function(path) {
+      var found;
+      found = Template.cache[Template.pathify(path)];
+      if (found === void 0) {
+        return false;
+      } else {
+        return found;
+      }
+    };
+
+    Template.pathify = function(path) {
+      if (path.indexOf(this.url) !== -1) {
+        return path;
+      } else {
+        return "" + this.url + "/" + (path.replace(/^\//, ''));
+      }
+    };
+
+    Template.set = function(path, html) {
+      var func, template;
+      path = Template.pathify(path);
+      func = Template.compile(html);
+      template = new Transit.Template(path, html, func);
+      Template.cache[path] = template;
+      return template;
+    };
+
+    Template.url = '/transit/views';
+
+    Template.prototype.path = '';
+
+    Template.prototype.source = "";
+
+    Template.prototype.func = null;
+
+    function Template(path, html, func) {
+      this.render = __bind(this.render, this);
+      this.path = path;
+      this.source = html;
+      this.func = func;
+      this;
+
+    }
+
+    Template.prototype.render = function(data) {
+      if (this.func === null) {
+        return this.source;
+      }
+      return this.func(data);
+    };
+
+    return Template;
+
+  }).call(this);
+
+  this.Transit.tpl = function(path, callback) {
+    var existing;
+    path = Transit.Template.pathify(path);
+    existing = Transit.Template.find(path);
+    if (existing === false) {
+      return $.get(path, function(data) {
+        var template;
+        template = Transit.Template.set(path, data);
+        return callback(template);
+      });
+    } else {
+      return callback(existing);
+    }
   };
 
-  Transit.browser = Browser;
-
-  if (typeof module !== "undefined" && module !== null) {
-    module.exports = Transit.browser;
-  }
-
 }).call(this);
-
-/*
-
-Context base class, all content contexts should inherit 
-this model. Creates a default _type value, as well as 
-sensible defaults for all models to inherit.
-*/
-
-
-(function() {
-  var Context,
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-  Context = (function(_super) {
-
-    __extends(Context, _super);
-
-    function Context() {
-      this._setType = __bind(this._setType, this);
-
-      this._cleanup = __bind(this._cleanup, this);
-      return Context.__super__.constructor.apply(this, arguments);
-    }
-
-    Context.build_as = 'contexts_attributes';
-
-    Context.prototype.view = null;
-
-    Context.prototype.type = null;
-
-    Context.prototype._pendingDestroy = false;
-
-    Context.prototype.initialize = function() {
-      var klass;
-      this._setType();
-      if (this.view === null) {
-        klass = Transit.get('view', this.type);
-        if (klass === null) {
-          klass = Transit.get('view', 'Context');
-        }
-        if (this.isNew()) {
-          this.view = new klass({
-            model: this
-          });
-        } else {
-          this.view = new klass({
-            model: this,
-            el: ".managed-context[data-context-id='\#\{@id\}']"
-          });
-        }
-      }
-      this.on('change', function(options) {
-        var name, value, _ref;
-        _ref = options.changes;
-        for (name in _ref) {
-          value = _ref[name];
-          this.view.trigger("change:" + name);
-        }
-        return this.view.trigger('change');
-      });
-      this.on('destroy', this.cleanup);
-      this.view.render();
-      return this;
-    };
-
-    Context.prototype._cleanup = function() {
-      this.view.remove();
-      return delete this.view;
-    };
-
-    Context.prototype._setType = function() {
-      if (this.type !== null) {
-        return true;
-      }
-      if (!this.has('_type')) {
-        this.set('_type', this.constructor.name);
-      }
-      return this.type = this.get('_type');
-    };
-
-    return Context;
-
-  })(Backbone.Model);
-
-  Transit.Context = Context;
-
-  if (typeof module !== "undefined" && module !== null) {
-    module.exports = Transit.Context;
-  }
-
-}).call(this);
-(function() {
-  var $, Deliverable,
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-  $ = window.$ || Backbone.$;
-
-  Deliverable = (function(_super) {
-
-    __extends(Deliverable, _super);
-
-    function Deliverable() {
-      this._build_contexts = __bind(this._build_contexts, this);
-
-      this.invalidate = __bind(this.invalidate, this);
-      return Deliverable.__super__.constructor.apply(this, arguments);
-    }
-
-    Deliverable.prototype.contexts = null;
-
-    Deliverable.prototype.initialize = function() {
-      this.contexts || (this.contexts = new Transit.Contexts());
-      this.on('change:contexts', this._build_contexts);
-      this._build_contexts();
-      return this;
-    };
-
-    Deliverable.prototype.invalidate = function(model, xhr, options) {
-      var attr, messages, response, _ref, _results;
-      if (xhr && xhr.responseText) {
-        response = $.parseJSON(xhr.responseText);
-        if (response['errors']) {
-          _ref = response.errors;
-          _results = [];
-          for (attr in _ref) {
-            messages = _ref[attr];
-            _results.push(model.trigger("error:" + attr, messages));
-          }
-          return _results;
-        }
-      }
-    };
-
-    Deliverable.prototype.toJSON = function() {
-      var data, result;
-      data = {};
-      this.contexts.each(function(con, index) {
-        return data[index.toString()] = con.toJSON();
-      });
-      result = {};
-      result["" + Transit.Contexts.build_as] = data;
-      return {
-        page: _.extend(Deliverable.__super__.toJSON.apply(this, arguments), result)
-      };
-    };
-
-    Deliverable.prototype._build_contexts = function() {
-      var contexts;
-      contexts = this.attributes.contexts || [];
-      this.contexts.reset(contexts);
-      delete this.attributes['contexts'];
-      return this;
-    };
-
-    return Deliverable;
-
-  })(Backbone.Model);
-
-  Transit.Deliverable = Deliverable;
-
-  if (typeof module !== "undefined" && module !== null) {
-    module.exports = Transit.Deliverable;
-  }
-
-}).call(this);
-(function() {
-  var Contexts,
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-  Contexts = (function(_super) {
-
-    __extends(Contexts, _super);
-
-    function Contexts() {
-      return Contexts.__super__.constructor.apply(this, arguments);
-    }
-
-    Contexts.build_as = 'contexts_attributes';
-
-    Contexts.prototype._deliverable = null;
-
-    Contexts.prototype.model = function(data) {
-      var klass;
-      klass = Transit.get('context', data['_type']);
-      if (klass !== null) {
-        return new klass(data);
-      } else {
-        return new Transit.Context(data);
-      }
-    };
-
-    return Contexts;
-
-  })(Backbone.Collection);
-
-  Transit.Contexts = Contexts;
-
-  if (typeof module !== "undefined" && module !== null) {
-    module.exports = Transit.Contexts;
-  }
-
-}).call(this);
-
-/*
-
-All deliverables can contain one or more assets.
-*/
-
-
-(function() {
-  var Asset, Assets,
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-  Asset = (function(_super) {
-
-    __extends(Asset, _super);
-
-    function Asset() {
-      return Asset.__super__.constructor.apply(this, arguments);
-    }
-
-    Asset.prototype.defaults = {
-      deliverable_id: null,
-      deliverable_type: null,
-      urls: [],
-      url: null,
-      image: true,
-      filename: null
-    };
-
-    Asset.prototype.isImage = function() {
-      return this.get('image');
-    };
-
-    return Asset;
-
-  })(Backbone.Model);
-
-  Assets = (function(_super) {
-
-    __extends(Assets, _super);
-
-    function Assets() {
-      return Assets.__super__.constructor.apply(this, arguments);
-    }
-
-    Assets.prototype.model = Asset;
-
-    Assets.prototype.url = function() {
-      return Transit.settings.asset_path;
-    };
-
-    Assets.prototype.fetch = function(options) {
-      if (options == null) {
-        options = {};
-      }
-      options.data = this.deliverable;
-      return Backbone.Collection.prototype.fetch.apply(this, [options]);
-    };
-
-    return Assets;
-
-  })(Backbone.Collection);
-
-  Transit.Asset = Asset;
-
-  Transit.Assets = Assets;
-
-  if (typeof module !== "undefined" && module !== null) {
-    module.exports = {
-      Asset: Asset,
-      Assets: Assets
-    };
-  }
-
-}).call(this);
-
-/*
-
-Context view class.
-*/
-
-
-(function() {
-  var Context,
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-  Context = (function(_super) {
-
-    __extends(Context, _super);
-
-    function Context() {
-      return Context.__super__.constructor.apply(this, arguments);
-    }
-
-    return Context;
-
-  })(Backbone.View);
-
-  Transit.set('view', 'Context', Context);
-
-}).call(this);
-
-/*
-
-The manager contains the global "shell" that contains
-all additional ui elements
-*/
-
-
 (function() {
   var Manager,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
@@ -784,11 +397,227 @@ all additional ui elements
 
   })(Backbone.View);
 
-  Transit.Manager = new Manager();
+  this.Transit.Manager = new Manager();
+
+}).call(this);
+(function() {
+  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  this.Transit.Modal = (function(_super) {
+
+    __extends(Modal, _super);
+
+    function Modal() {
+      this.render = __bind(this.render, this);
+
+      this.perform = __bind(this.perform, this);
+      return Modal.__super__.constructor.apply(this, arguments);
+    }
+
+    Modal.handler = function(instance) {
+      return $(instance.$el).modal({
+        show: true
+      }).one('hidden', function(event) {
+        Transit.trigger('modal:close', instance);
+        return instance.trigger('close');
+      });
+    };
+
+    Modal.prototype.tagName = 'div';
+
+    Modal.prototype.className = 'transit-modal';
+
+    Modal.prototype.events = {
+      'click a[data-action]': 'perform'
+    };
+
+    Modal.prototype.initialize = function() {
+      Modal.__super__.initialize.apply(this, arguments);
+      this.on('close', this.remove, this);
+      return this.options = _.defaults(this.options, {
+        buttons: [],
+        title: "Title Missing",
+        content: "Content missing"
+      });
+    };
+
+    Modal.prototype.perform = function(event) {
+      var link;
+      event.preventDefault();
+      link = $(event.currentTarget);
+      return Transit.trigger('modal:action', link.attr('data-action'), this);
+    };
+
+    Modal.prototype.remove = function() {
+      this.off();
+      this.trigger('remove');
+      return Modal.__super__.remove.apply(this, arguments);
+    };
+
+    Modal.prototype.render = function() {
+      var _this = this;
+      Transit.tpl("/core/modal.jst", function(template) {
+        var el;
+        el = $(template.render(_this.options)).attr('id', "transit_modal_" + _this.cid);
+        _this.setElement(el);
+        _this.trigger('open');
+        Transit.trigger('modal:show', _this);
+        _this.$el.addClass('out');
+        Transit.Manager.append(_this.$el);
+        Transit.Modal.handler(_this);
+        return _this.$el.removeClass('out').addClass('in');
+      });
+      return this;
+    };
+
+    return Modal;
+
+  })(Backbone.View);
+
+  this.Transit.modal = function(options) {
+    var view;
+    if (options == null) {
+      options = {};
+    }
+    view = new Transit.Modal(options);
+    Transit.one('modal:show', function(mod) {
+      if (mod !== view) {
+        return false;
+      }
+    });
+    return view.render();
+  };
+
+}).call(this);
+(function() {
+  var Notify,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
+  Notify = (function() {
+
+    Notify.prototype.template = function() {};
+
+    function Notify() {
+      this._setup = __bind(this._setup, this);
+
+      this._render = __bind(this._render, this);
+
+      this.success = __bind(this.success, this);
+
+      this.info = __bind(this.info, this);
+
+      this.error = __bind(this.error, this);
+      Transit.one('ready', this._setup);
+    }
+
+    Notify.prototype.error = function(message) {
+      return this._render(message, 'error');
+    };
+
+    Notify.prototype.info = function(message) {
+      return this._render(message, 'info');
+    };
+
+    Notify.prototype.success = function(message) {
+      return this._render(message, 'success');
+    };
+
+    Notify.prototype._render = function(message, type) {
+      return Transit.Manager.append($(this.template({
+        message: message,
+        type: type
+      })));
+    };
+
+    Notify.prototype._setup = function() {
+      var _this = this;
+      return Transit.tpl("/core/notification.jst", function(templ) {
+        return _this.template = templ;
+      });
+    };
+
+    return Notify;
+
+  })();
+
+  Transit.Notify = new Notify();
 
   if (typeof module !== "undefined" && module !== null) {
-    module.exports = Transit.Manager;
+    module.exports = Transit.Notify;
   }
+
+}).call(this);
+(function() {
+  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  this.Transit.Panel = (function(_super) {
+
+    __extends(Panel, _super);
+
+    Panel.prototype.tagName = 'div';
+
+    Panel.prototype.className = 'transit-panel';
+
+    Panel.prototype.title = 'Detail';
+
+    Panel.prototype.icon = '';
+
+    Panel.prototype.active = false;
+
+    function Panel() {
+      this.remove = __bind(this.remove, this);
+
+      this.render = __bind(this.render, this);
+
+      this.deactivate = __bind(this.deactivate, this);
+
+      this.activate = __bind(this.activate, this);
+
+      this.initialize = __bind(this.initialize, this);
+
+      var prop, _i, _len, _ref;
+      Panel.__super__.constructor.apply(this, arguments);
+      _ref = ['title', 'icon'];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        prop = _ref[_i];
+        if (this.options[prop] !== void 0) {
+          this[prop] = this.options[prop];
+        }
+      }
+      if (this.$el.attr('id') === void 0) {
+        this.$el.attr("id", "transit_panel_" + this.cid);
+      }
+    }
+
+    Panel.prototype.initialize = function() {};
+
+    Panel.prototype.activate = function() {
+      this.active = true;
+      return this.$el.addClass('active');
+    };
+
+    Panel.prototype.deactivate = function() {
+      this.active = false;
+      return this.$el.removeClass('active');
+    };
+
+    Panel.prototype.render = function() {
+      Panel.__super__.render.apply(this, arguments);
+      return this;
+    };
+
+    Panel.prototype.remove = function() {
+      Panel.__super__.remove.apply(this, arguments);
+      return this.trigger('remove', this);
+    };
+
+    return Panel;
+
+  })(Backbone.View);
 
 }).call(this);
 
@@ -801,13 +630,13 @@ functionality of the manager.
 
 
 (function() {
-  var TabBar, Toolbar,
+  var TabBar,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     __slice = [].slice;
 
-  Toolbar = (function(_super) {
+  this.Transit.Toolbar = (function(_super) {
 
     __extends(Toolbar, _super);
 
@@ -937,10 +766,10 @@ functionality of the manager.
 
       var _this = this;
       this.tabs = {};
-      Transit.template.load('/transit/views/core/tab-bar.jst', function(templ) {
+      Transit.tpl('/transit/views/core/nav-bar.jst', function(templ) {
         var id, tab, _ref, _results;
-        _this.el = $(templ());
-        _this.list = _this.el.find('ul.transit-tab-bar');
+        _this.el = $(templ.render());
+        _this.list = _this.el.find('ul.transit-nav-bar');
         _ref = _this.tabs;
         _results = [];
         for (id in _ref) {
@@ -1028,96 +857,333 @@ functionality of the manager.
 
   })();
 
-  Transit.Toolbar = Toolbar;
-
-  if (typeof module !== "undefined" && module !== null) {
-    module.exports = Transit.Toolbar;
-  }
-
 }).call(this);
 (function() {
-  var Panel,
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+  var XHRUploadSupport, fileApiSupport,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  Panel = (function(_super) {
+  XHRUploadSupport = function() {
+    var xhr;
+    if (XMLHttpRequest === void 0) {
+      return false;
+    }
+    xhr = new XMLHttpRequest();
+    if (xhr['upload'] === void 0) {
+      return false;
+    }
+    return xhr.upload['onprogress'] !== void 0;
+  };
 
-    __extends(Panel, _super);
+  fileApiSupport = function() {
+    var input;
+    input = document.createElement('INPUT');
+    input.type = 'file';
+    return input['files'] !== void 0;
+  };
 
-    Panel.prototype.tagName = 'div';
+  this.Transit.Uploader = (function(_super) {
 
-    Panel.prototype.className = 'transit-panel';
+    __extends(Uploader, _super);
 
-    Panel.prototype.title = 'Detail';
-
-    Panel.prototype.icon = '';
-
-    Panel.prototype.active = false;
-
-    function Panel() {
-      this.remove = __bind(this.remove, this);
-
-      this.deactivate = __bind(this.deactivate, this);
-
-      this.activate = __bind(this.activate, this);
-
-      this.initialize = __bind(this.initialize, this);
-
-      var prop, _i, _len, _ref;
-      Panel.__super__.constructor.apply(this, arguments);
-      _ref = ['title', 'icon'];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        prop = _ref[_i];
-        if (this.options[prop] !== void 0) {
-          this[prop] = this.options[prop];
-        }
-      }
-      if (this.$el.attr('id') === void 0) {
-        this.$el.attr("id", "transit_panel_" + this.cid);
-      }
+    function Uploader() {
+      return Uploader.__super__.constructor.apply(this, arguments);
     }
 
-    Panel.prototype.initialize = function() {};
+    Uploader.prototype.tagName = 'div';
 
-    Panel.prototype.activate = function() {
-      this.active = true;
-      return this.$el.addClass('active');
-    };
+    Uploader.prototype.className = 'transit-uploader';
 
-    Panel.prototype.deactivate = function() {
-      this.active = false;
-      return this.$el.removeClass('active');
-    };
+    Uploader["native"] = XHRUploadSupport();
 
-    Panel.prototype.remove = function() {
-      Panel.__super__.remove.apply(this, arguments);
-      return this.trigger('remove', this);
-    };
-
-    return Panel;
+    return Uploader;
 
   })(Backbone.View);
 
-  Transit.Panel = Panel;
+}).call(this);
+(function() {
+  var __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  if (typeof module !== "undefined" && module !== null) {
-    module.exports = Transit.Panel;
-  }
+  this.Transit.Asset = (function(_super) {
+
+    __extends(Asset, _super);
+
+    function Asset() {
+      return Asset.__super__.constructor.apply(this, arguments);
+    }
+
+    Asset.prototype.defaults = {
+      deliverable_id: null,
+      deliverable_type: null,
+      urls: [],
+      url: null,
+      image: true,
+      filename: null
+    };
+
+    Asset.prototype.isImage = function() {
+      return this.get('image');
+    };
+
+    return Asset;
+
+  })(Backbone.Model);
 
 }).call(this);
 (function() {
-  var AssetManager,
+  var __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  this.Transit.Assets = (function(_super) {
+
+    __extends(Assets, _super);
+
+    function Assets() {
+      return Assets.__super__.constructor.apply(this, arguments);
+    }
+
+    Assets.prototype.model = function() {
+      return Transit.Asset;
+    };
+
+    Assets.prototype.url = function() {
+      return Transit.settings.asset_path;
+    };
+
+    Assets.prototype.fetch = function(options) {
+      if (options == null) {
+        options = {};
+      }
+      options.data = this.deliverable;
+      return Backbone.Collection.prototype.fetch.apply(this, [options]);
+    };
+
+    return Assets;
+
+  })(Backbone.Collection);
+
+}).call(this);
+
+/*
+
+Context base class, all content contexts should inherit 
+this model. Creates a default _type value, as well as 
+sensible defaults for all models to inherit.
+*/
+
+
+(function() {
+  var Context,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  AssetManager = (function(_super) {
+  Context = (function(_super) {
+
+    __extends(Context, _super);
+
+    function Context() {
+      this._setType = __bind(this._setType, this);
+
+      this._cleanup = __bind(this._cleanup, this);
+      return Context.__super__.constructor.apply(this, arguments);
+    }
+
+    Context.build_as = 'contexts_attributes';
+
+    Context.prototype.view = null;
+
+    Context.prototype.type = null;
+
+    Context.prototype._pendingDestroy = false;
+
+    Context.prototype.initialize = function() {
+      var klass;
+      this._setType();
+      if (this.view === null) {
+        klass = Transit.get('view', this.type);
+        if (klass === null) {
+          klass = Transit.get('view', 'Context');
+        }
+        if (this.isNew()) {
+          this.view = new klass({
+            model: this
+          });
+        } else {
+          this.view = new klass({
+            model: this,
+            el: ".managed-context[data-context-id='\#\{@id\}']"
+          });
+        }
+      }
+      this.on('change', function(options) {
+        var name, value, _ref;
+        _ref = options.changes;
+        for (name in _ref) {
+          value = _ref[name];
+          this.view.trigger("change:" + name);
+        }
+        return this.view.trigger('change');
+      });
+      this.on('destroy', this.cleanup);
+      this.view.render();
+      return this;
+    };
+
+    Context.prototype._cleanup = function() {
+      this.view.remove();
+      return delete this.view;
+    };
+
+    Context.prototype._setType = function() {
+      if (this.type !== null) {
+        return true;
+      }
+      if (!this.has('_type')) {
+        this.set('_type', this.constructor.name);
+      }
+      return this.type = this.get('_type');
+    };
+
+    return Context;
+
+  })(Backbone.Model);
+
+  Transit.Context = Context;
+
+  if (typeof module !== "undefined" && module !== null) {
+    module.exports = Transit.Context;
+  }
+
+}).call(this);
+(function() {
+  var Contexts,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  Contexts = (function(_super) {
+
+    __extends(Contexts, _super);
+
+    function Contexts() {
+      return Contexts.__super__.constructor.apply(this, arguments);
+    }
+
+    Contexts.build_as = 'contexts_attributes';
+
+    Contexts.prototype._deliverable = null;
+
+    Contexts.prototype.model = function(data) {
+      var klass;
+      klass = Transit.get('context', data['_type']);
+      if (klass !== null) {
+        return new klass(data);
+      } else {
+        return new Transit.Context(data);
+      }
+    };
+
+    return Contexts;
+
+  })(Backbone.Collection);
+
+  Transit.Contexts = Contexts;
+
+  if (typeof module !== "undefined" && module !== null) {
+    module.exports = Transit.Contexts;
+  }
+
+}).call(this);
+(function() {
+  var $, Deliverable,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  $ = window.$ || Backbone.$;
+
+  Deliverable = (function(_super) {
+
+    __extends(Deliverable, _super);
+
+    function Deliverable() {
+      this._build_contexts = __bind(this._build_contexts, this);
+
+      this.invalidate = __bind(this.invalidate, this);
+      return Deliverable.__super__.constructor.apply(this, arguments);
+    }
+
+    Deliverable.prototype.contexts = null;
+
+    Deliverable.prototype.initialize = function() {
+      this.contexts || (this.contexts = new Transit.Contexts());
+      this.on('change:contexts', this._build_contexts);
+      this._build_contexts();
+      return this;
+    };
+
+    Deliverable.prototype.invalidate = function(model, xhr, options) {
+      var attr, messages, response, _ref, _results;
+      if (xhr && xhr.responseText) {
+        response = $.parseJSON(xhr.responseText);
+        if (response['errors']) {
+          _ref = response.errors;
+          _results = [];
+          for (attr in _ref) {
+            messages = _ref[attr];
+            _results.push(model.trigger("error:" + attr, messages));
+          }
+          return _results;
+        }
+      }
+    };
+
+    Deliverable.prototype.toJSON = function() {
+      var data, result;
+      data = {};
+      this.contexts.each(function(con, index) {
+        return data[index.toString()] = con.toJSON();
+      });
+      result = {};
+      result["" + Transit.Contexts.build_as] = data;
+      return {
+        page: _.extend(Deliverable.__super__.toJSON.apply(this, arguments), result)
+      };
+    };
+
+    Deliverable.prototype._build_contexts = function() {
+      var contexts;
+      contexts = this.attributes.contexts || [];
+      this.contexts.reset(contexts);
+      delete this.attributes['contexts'];
+      return this;
+    };
+
+    return Deliverable;
+
+  })(Backbone.Model);
+
+  Transit.Deliverable = Deliverable;
+
+  if (typeof module !== "undefined" && module !== null) {
+    module.exports = Transit.Deliverable;
+  }
+
+}).call(this);
+(function() {
+  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  this.Transit.AssetManager = (function(_super) {
 
     __extends(AssetManager, _super);
 
     function AssetManager() {
       this.render = __bind(this.render, this);
+
+      this.add = __bind(this.add, this);
       return AssetManager.__super__.constructor.apply(this, arguments);
     }
 
@@ -1125,23 +1191,159 @@ functionality of the manager.
 
     AssetManager.prototype.collection = null;
 
+    AssetManager.prototype.images = null;
+
+    AssetManager.prototype.files = null;
+
+    AssetManager.prototype.title = 'Assets';
+
+    AssetManager.prototype.attach = function(model) {
+      this.model = model;
+      if (this.model.assets === void 0) {
+        return this.model.assets = new Transit.Assets();
+      }
+    };
+
+    AssetManager.prototype.add = function(asset) {
+      if (asset.isImage()) {
+        return this.images.add(asset);
+      } else {
+        return this.files.add(asset);
+      }
+    };
+
     AssetManager.prototype.render = function() {
       AssetManager.__super__.render.apply(this, arguments);
       this.$el.addClass('transit-asset-manager');
       if (this.uploader === null) {
         this.uploader = new Transit.Uploader();
-        return this.$el.prepend(this.uploader.render().$el);
+        this.$el.prepend(this.uploader.render().$el);
       }
+      if (this.files === null) {
+        this.files = new Transit.AssetManager.List({
+          "class": 'files'
+        });
+      }
+      if (this.images === null) {
+        this.images = new Transit.AssetManager.List({
+          "class": 'images'
+        });
+      }
+      this.$el.append(this.images.render().$el);
+      this.$el.append(this.files.render().$el);
+      return this;
     };
 
     return AssetManager;
 
   })(Transit.Panel);
 
-  Transit.AssetManager = AssetManager;
+  this.Transit.AssetManager.List = (function(_super) {
 
-  if (typeof module !== "undefined" && module !== null) {
-    module.exports = Transit.AssetManager;
-  }
+    __extends(List, _super);
+
+    function List() {
+      this.add = __bind(this.add, this);
+      return List.__super__.constructor.apply(this, arguments);
+    }
+
+    List.prototype.tagName = 'ul';
+
+    List.prototype.initialize = function() {
+      List.__super__.initialize.apply(this, arguments);
+      if (this.options['class']) {
+        return this.$el.addClass(this.options['class']);
+      }
+    };
+
+    List.prototype.add = function(asset) {
+      var item;
+      item = new Transit.AssetManager.Item({
+        model: asset
+      });
+      return this.$el.append(item.render.$el());
+    };
+
+    return List;
+
+  })(Backbone.View);
+
+  this.Transit.AssetManager.Item = (function(_super) {
+
+    __extends(Item, _super);
+
+    function Item() {
+      this.remove = __bind(this.remove, this);
+
+      this.render = __bind(this.render, this);
+      return Item.__super__.constructor.apply(this, arguments);
+    }
+
+    Item.prototype.events = {
+      'click a[data-action="remove"]': 'remove'
+    };
+
+    Item.prototype.tagName = 'li';
+
+    Item.prototype.type = null;
+
+    Item.prototype.template = null;
+
+    Item.prototype.initialize = function() {
+      var _this = this;
+      this.type = this.model.isImage() ? 'image' : 'file';
+      this.$el.addClass(this.type);
+      return Transit.tpl("/core/assets/" + this.type + ".jst", function(templ) {
+        _this.template = templ;
+        return _this.render();
+      });
+    };
+
+    Item.prototype.render = function() {
+      return this.$el.html(this.template({
+        asset: this.model
+      }));
+    };
+
+    Item.prototype.remove = function() {
+      if (confirm("Are you sure you want to delete this " + this.type + "?")) {
+        this.model.destroy();
+        Transit.trigger('asset:removed', this.model);
+        return Item.__super__.remove.apply(this, arguments);
+      } else {
+        return false;
+      }
+    };
+
+    return Item;
+
+  })(Backbone.View);
+
+}).call(this);
+
+/*
+
+Context view class.
+*/
+
+
+(function() {
+  var Context,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  Context = (function(_super) {
+
+    __extends(Context, _super);
+
+    function Context() {
+      return Context.__super__.constructor.apply(this, arguments);
+    }
+
+    return Context;
+
+  })(Backbone.View);
+
+  Transit.set('view', 'Context', Context);
 
 }).call(this);

@@ -6,7 +6,7 @@ functionality of the manager.
 
 ###
 
-class Toolbar extends Backbone.View
+class @Transit.Toolbar extends Backbone.View
   panels: {}
   tabBar: null
   heading: null
@@ -81,9 +81,9 @@ class TabBar
   tabs: {}
   constructor: -> 
     @tabs = {}
-    Transit.template.load '/transit/views/core/tab-bar.jst', (templ)=>
-      @el   = $(templ())
-      @list = @el.find('ul.transit-tab-bar')
+    Transit.tpl '/transit/views/core/nav-bar.jst', (templ)=>
+      @el   = $(templ.render())
+      @list = @el.find('ul.transit-nav-bar')
       @el.append(tab) for id, tab of @tabs
     @
   
@@ -135,9 +135,3 @@ class TabBar
   prepend:(panel)=> @list.prepend( @make(panel) )
   
   remove:(id)=> @find(id).remove()
-
-##
-# Expose object
-#
-Transit.Toolbar = Toolbar
-module?.exports = Transit.Toolbar

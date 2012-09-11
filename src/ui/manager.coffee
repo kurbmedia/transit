@@ -1,10 +1,3 @@
-###
-
-The manager contains the global "shell" that contains
-all additional ui elements
-
-###
-
 class Manager extends Backbone.View
   tagName: 'div'
   className: 'transit-ui'  
@@ -51,8 +44,5 @@ class Manager extends Backbone.View
     return false unless @model
     @model.save
 
-##
-# Expose object
-#
-Transit.Manager = new Manager()
-module?.exports = Transit.Manager
+
+@Transit.Manager = new Manager()

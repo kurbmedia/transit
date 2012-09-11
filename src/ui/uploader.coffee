@@ -11,14 +11,7 @@ fileApiSupport = ()->
   input['files'] isnt undefined
 
 
-class Uploader extends Backbone.View
+class @Transit.Uploader extends Backbone.View
   tagName: 'div'
   className: 'transit-uploader'
   @native: XHRUploadSupport()
-
-
-##
-# Expose object
-#
-Transit.Uploader = Uploader
-module?.exports = Transit.Uploader

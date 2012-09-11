@@ -16,7 +16,7 @@ describe 'Transit.Toolbar', ()->
       .toNotEqual(0)
 
   it 'creates a tab-bar list', ()->
-    expect(Transit.Toolbar.$('ul.transit-tab-bar').length)
+    expect(Transit.Toolbar.$('ul.transit-nav-bar').length)
       .toNotEqual(0)
    
   it 'creates a tab bar instance', ()->

@@ -25,16 +25,20 @@
     <script type="text/javascript" charset="utf-8">
     //<![CDATA[
         (function(){
-            var Page, panel, content;
+            var Page, panel, content, assets;
             
             Transit.ready(function(){
+                var template;
+                
                 Page = new Transit.Deliverable();
                 Transit.init(Page);
                 Transit.Toolbar.set('heading', 'Manage Page');
                 panel   = new Transit.Panel({title: 'Info'});
                 content = new Transit.Panel({ title: 'Content' });
-                Transit.Toolbar.add(panel, content);
-                Transit.Manager.append(Transit.cache.get('tpl', '/transit/views/core/save-button.jst')({ text: 'Save' }));
+                assets  = new Transit.AssetManager();
+                Transit.Toolbar.add(panel, content, assets);
+                template = Transit.Template.find('/transit/views/core/save-button.jst')
+                Transit.Manager.append(template.render({ text: 'Save' }));
                 window.Page = Page;
                 Transit.Manager.show();
                 panel.trigger('active');
