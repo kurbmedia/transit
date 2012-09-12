@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Transit by kurbmedia</title>
+  </head>
+
+  <body>
+    <div id="container">
+      <div class="inner">
+
+        <header>
+          <h1>Transit</h1>
+          <h2>De-Coupled CMS with Backbone.js</h2>
+        </header>
+
+        <section id="downloads" class="clearfix">
+          <a href="https://github.com/kurbmedia/transit/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
+          <a href="https://github.com/kurbmedia/transit/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
+          <a href="https://github.com/kurbmedia/transit" id="view-on-github" class="button"><span>View on GitHub</span></a>
+        </section>
+
+        <hr>
+
+        <section id="main_content">
+          <h1>Transit</h1>
+
+<h3>Simple Content Management</h3>
+
+<p>Transit is a backend agnostic approach to content management, using the power of Backbone.js. Typical CMS platforms are all-in-one solutions, containing both 
+a back-end application, and front-end interface. Transit aims to be only the latter. </p>
+
+<h3>Goals</h3>
+
+<ol>
+<li>Provide a solid interface for managing content inline within a page</li>
+<li>Compatibility with any REST based backend, using JSON as its data structure.</li>
+<li>Allow easy integration into any backend environment by utilizing conventions over configuration</li>
+<li>Support full customization of the interface, both functionally and aesthetically. This is achieved through the use of <code>handler</code> functions and javascript templates.</li>
+</ol><h2></h2>
+
+<h3>Architecture</h3>
+
+<p><strong>Contexts and Deliverables</strong></p>
+
+<p>The model architecture is based around a primary "Deliverable", which contains one or more "Contexts". Deliverables are typically things like a page, or 
+a blog post, but can be anything which contains multiple Contexts. </p>
+
+<p>Contexts can be any type of structured content. Examples could be headings (h1-h6), general text blocks (paragraphs/lists/basic formatting), audio files, videos, 
+image galleries... or any other content which can be described in HTML. Each deliverable has a <code>has_many</code> relationship to a collection of contexts, 
+which can be organized and arranged in any particular order. As an example, consider a <code>Post</code> deliverable, which contains some content and a video:</p>
+
+<div class="highlight"><pre><span class="nt">&lt;article</span> <span class="na">id=</span><span class="s">"post"</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;h2&gt;</span>The Post Title<span class="nt">&lt;/h2&gt;</span>
+  <span class="nt">&lt;div</span> <span class="na">data-context-id=</span><span class="s">"xxx"</span> <span class="na">class=</span><span class="s">"content"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;p&gt;</span>Lorem ipsum dolor sit amet, consectetur adipisicing elit....<span class="nt">&lt;/p&gt;</span>
+  <span class="nt">&lt;/div&gt;</span>
+  <span class="nt">&lt;h3</span> <span class="na">data-context-id=</span><span class="s">"xxx"</span><span class="nt">&gt;</span>A Sub Heading<span class="nt">&lt;/h3&gt;</span>
+  <span class="nt">&lt;video</span> <span class="na">data-context-id=</span><span class="s">"xxx"</span> <span class="na">src=</span><span class="s">"some_random.mp4"</span> <span class="na">poster=</span><span class="s">"poster.jpg"</span> <span class="nt">/&gt;</span>
+<span class="nt">&lt;/article&gt;</span>
+</pre></div>
+
+<p>In the example above, the Post's contexts would consist of the body copy (div.content), the sub-heading (h3), and a video. Items like the post title (h2) 
+would be described within the Post itself. A JSON representation of the Post "Deliverable" would be as follows:</p>
+
+<div class="highlight"><pre><span class="p">{</span>
+  <span class="nt">"id"</span> <span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+  <span class="nt">"_type"</span> <span class="p">:</span> <span class="s2">"Post"</span><span class="p">,</span>
+  <span class="nt">"title"</span> <span class="p">:</span> <span class="s2">"The Post Title"</span><span class="p">,</span>
+  <span class="nt">"contexts"</span><span class="p">:[</span>
+    <span class="p">{</span>
+      <span class="nt">"id"</span> <span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+      <span class="nt">"_type"</span> <span class="p">:</span> <span class="s2">"TextBlock"</span><span class="p">,</span>
+      <span class="nt">"body"</span> <span class="p">:</span> <span class="s2">"Lorem ipsum dolor sit amet, consectetur adipisicing elit...."</span><span class="p">,</span>
+      <span class="nt">"position"</span><span class="p">:</span> <span class="mi">1</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+      <span class="nt">"id"</span> <span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+      <span class="nt">"_type"</span> <span class="p">:</span> <span class="s2">"Heading"</span><span class="p">,</span>
+      <span class="nt">"body"</span> <span class="p">:</span> <span class="s2">"A Sub Heading"</span><span class="p">,</span>
+      <span class="nt">"node"</span> <span class="p">:</span> <span class="s2">"h3"</span><span class="p">,</span>
+      <span class="nt">"position"</span><span class="p">:</span> <span class="mi">2</span>
+    <span class="p">},</span>
+    <span class="p">{</span>
+      <span class="nt">"id"</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+      <span class="nt">"_type"</span> <span class="p">:</span> <span class="s2">"Video"</span><span class="p">,</span>
+      <span class="nt">"source"</span> <span class="p">:</span> <span class="s2">"some_random.mp4"</span><span class="p">,</span>
+      <span class="nt">"poster"</span> <span class="p">:</span> <span class="s2">"poster.jpg"</span><span class="p">,</span>
+      <span class="nt">"position"</span><span class="p">:</span> <span class="mi">3</span>
+    <span class="p">}</span>
+  <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Each model, whether deliverable or context, contains a <code>_type</code> attribute (yeah, we use Mongoid a lot) which represents the type of model to be used. 
+This is particularly useful when data is loaded, as Transit will automatically map each item to the appropriate Backbone model within your app
+(falling back to a generic <code>Context</code> model) before adding it to the deliverable's <code>contexts</code> attribute.  Contexts also include a <code>position</code>
+attribute, which determines the ordering of each context within the deliverable. </p>
+
+<p>The <code>id</code>, <code>_type</code> and <code>position</code> attributes are the only two that are required, additional attributes would be dependent on your particular integration.</p>
+
+<p>Transit also includes an Asset model, which is used for general, user-uploaded files and images. </p>
+
+<p><strong>Interface</strong></p>
+
+<p>The UI is designed around the concept of a unified toolbar, which functions similar to a typical "tabbed" interface. The toolbar can contain one or more 
+panels, which can be added and removed as necessary depending on the content to be managed. </p>
+
+<h2></h2>
+
+<h3>Managing Content</h3>
+
+<p>...more information coming</p>
+
+<h2></h2>
+
+<h3>Contributing</h3>
+
+<p>Transit is written in <a href="http://jashkenas.github.com/coffee-script/">CoffeeScript</a>, and is designed to function as a NPM package (currently the library has not been pushed).
+Tests are written using <a href="http://pivotal.github.com/jasmine/">jasmine</a> and coffeescript.</p>
+
+<p>To contribute, fork the <a href="https://github.com/kurbmedia/transit">repository on GitHub</a> and <a href="http://help.github.com/pull-requests/">send a pull request</a>. Be sure to 
+include the issue # of your fix or feature implementation (if applicable), as well as any relevant tests/specs. Pull requests without associated (and passing) tests 
+will not be merged.</p>
+
+<p>To assist with backend integration, additional libraries are either planned or in development. This includes a Rails engine (nearing completion), and a 
+restful PHP backend (in planning). If you'd be interested in contributing to either of these, please shoot us a message on Github.</p>
+
+<h2></h2>
+
+<h3>License</h3>
+
+<p>Transit is ©2011-2012 kurb media, llc. Licensed under the <a href="http://en.wikipedia.org/wiki/MIT_License">MIT license</a>. Do whatever you'd like, 
+but contributing any cool features / functionality you may add would simply make you awesome.</p>
+        </section>
+
+        <footer>
+          Transit is maintained by <a href="https://github.com/kurbmedia">kurbmedia</a><br>
+          This page was generated by <a href="http://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="http://twitter.com/jasonlong">Jason Long</a>.
+        </footer>
+
+        
+      </div>
+    </div>
+  </body>
+</html>
