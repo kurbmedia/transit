@@ -1,11 +1,5 @@
-###
-
- Selection support, provided to make working with selections and 
- ranges easier.
- 
-###
 class Selector
-  @selection: null
+  selection: null
   constructor: ()-> _.bindAll(@)
   
   # Get the window x/y of the cursor
@@ -46,8 +40,5 @@ class Selector
     @selection = @get()
     @selection
 
-##
-# Expose object
-#
-Transit.Selection = new Selector()
-module?.exports = Transit.Selection
+
+@Transit.Selection = new Selector()

@@ -14,7 +14,10 @@
     <script type="text/javascript" src="lib/backbone-forms-0.10.1.js"></script>
     <script type="text/javascript" src="lib/bootstrap.js"></script>
     <script type="text/javascript" src="build/transit.js"></script>
+    <script type="text/javascript" src="spec/support/sinon.js"></script>
+    <!--
     <script type="text/javascript" src="spec/support/coffeescript.js"></script>
+    -->
     <script type="text/javascript" charset="utf-8">
     //<![CDATA[
         window.specs = [
@@ -23,6 +26,23 @@
             'ui/manager', 'ui/modal', 'ui/panel', 'ui/toolbar', 'ui/uploader',
             'views/asset_manager', 'views/context'
         ];
+        (function() {
+          var jasmineEnv, htmlReporter;
+          
+          jasmineEnv = jasmine.getEnv();
+          jasmineEnv.updateInterval = 1000;
+          htmlReporter = new jasmine.HtmlReporter();
+
+          jasmineEnv.addReporter(htmlReporter);
+
+          jasmineEnv.specFilter = function(spec) {
+            return htmlReporter.specFilter(spec);
+          };
+
+          window.onload = function(){
+              jasmineEnv.execute();
+          };  
+        })();
     //]]>
     </script>
     <script type="text/javascript" src="build/themes/bootstrap.js"></script>

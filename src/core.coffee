@@ -1,36 +1,9 @@
 _ready    = true
 _winready = false
 
-##
-# Store a cache of items, this can be views, contexts, templates etc.
-# Available objects are registered by name and type. 
-# This allows easy lookup of options and other info when creating
-# instances on the fly.
-
-class Cache
-  view: {}
-  context: {}
-  tpl: {}
-  get: (type, name)=>
-    type = type.toLowerCase()
-    name = name.toLowerCase()
-    found = @[type][name]
-    if found is undefined then null else found
-  
-  set: (type, name, obj)=>
-    type = type.toLowerCase()
-    name = name.toLowerCase()
-    @[type][name] = obj
-  
-  drop:(type, name)=>
-    delete @[type][name]
-    @
-
 Transit = {}
 
 _.extend Transit,
-
-  cache: new Cache()
 
   # Add an internal event system to share across everything
   # include an additional "one" value similar to jQuery to run

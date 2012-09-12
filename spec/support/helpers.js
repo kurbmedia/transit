@@ -25,6 +25,19 @@ beforeEach(function(){
         return "Expected " + actual + notText + " to have a .length of " + expected;
       }
       return actual == expected;
+    },
+    
+    toBeInstanceOf: function(expected){
+      var actual = this.actual.constructor.name, found;
+      
+      found = ( _.isString(expected) ) ? expected : expected.name;
+      
+      this.message = function(){
+        return "Expected " + actual + " to be a " + found;
+      };
+      
+      if( _.isString(expected) ) return actual === found;
+      return this.actual instanceof expected
     }
   });
   

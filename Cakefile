@@ -28,6 +28,7 @@ less             = require 'less'
 javascripts  = {
   'build/transit.js': [
     'src/core.coffee'
+    'src/core/cache.coffee'
     'src/core/browser.coffee'
     'src/core/selection.coffee'
     'src/core/template.coffee'
@@ -46,13 +47,25 @@ javascripts  = {
     'src/model/deliverable.coffee'
     
     'src/views/asset_manager.coffee'
-    'src/views/context.coffee'
+    'src/views/view.coffee'
 
   ],
+  
   'build/themes/bootstrap.js':[
     'src/themes/bootstrap.coffee'
   ]
 }
+
+do ()->
+  specs = []
+  for file in javascripts['build/transit.js']
+    file = file.replace(/\.coffee$/,'_spec.coffee')
+    specs.push(file.replace(/^src/, 'spec'))
+  
+  javascripts['spec/support/runner.js'] = specs
+
+  
+
 
 
 # Stylesheet sources

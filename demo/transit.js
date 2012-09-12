@@ -1,60 +1,14 @@
 (function() {
-  var Cache, Transit, _ready, _winready,
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+  var Transit, _ready, _winready,
     __slice = [].slice;
 
   _ready = true;
 
   _winready = false;
 
-  Cache = (function() {
-
-    function Cache() {
-      this.drop = __bind(this.drop, this);
-
-      this.set = __bind(this.set, this);
-
-      this.get = __bind(this.get, this);
-
-    }
-
-    Cache.prototype.view = {};
-
-    Cache.prototype.context = {};
-
-    Cache.prototype.tpl = {};
-
-    Cache.prototype.get = function(type, name) {
-      var found;
-      type = type.toLowerCase();
-      name = name.toLowerCase();
-      found = this[type][name];
-      if (found === void 0) {
-        return null;
-      } else {
-        return found;
-      }
-    };
-
-    Cache.prototype.set = function(type, name, obj) {
-      type = type.toLowerCase();
-      name = name.toLowerCase();
-      return this[type][name] = obj;
-    };
-
-    Cache.prototype.drop = function(type, name) {
-      delete this[type][name];
-      return this;
-    };
-
-    return Cache;
-
-  })();
-
   Transit = {};
 
   _.extend(Transit, {
-    cache: new Cache(),
     on: Backbone.Events.on,
     off: Backbone.Events.off,
     one: function(events, callback, context) {
@@ -125,6 +79,57 @@
 
 }).call(this);
 (function() {
+  var Cache,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
+  Cache = (function() {
+
+    function Cache() {
+      this.drop = __bind(this.drop, this);
+
+      this.set = __bind(this.set, this);
+
+      this.get = __bind(this.get, this);
+
+    }
+
+    Cache.prototype.view = {};
+
+    Cache.prototype.context = {};
+
+    Cache.prototype.tpl = {};
+
+    Cache.prototype.get = function(type, name) {
+      var found;
+      type = type.toLowerCase();
+      name = name.toLowerCase();
+      found = this[type][name];
+      if (found === void 0) {
+        return null;
+      } else {
+        return found;
+      }
+    };
+
+    Cache.prototype.set = function(type, name, obj) {
+      type = type.toLowerCase();
+      name = name.toLowerCase();
+      return this[type][name] = obj;
+    };
+
+    Cache.prototype.drop = function(type, name) {
+      delete this[type][name];
+      return this;
+    };
+
+    return Cache;
+
+  })();
+
+  this.Transit.cache = new Cache();
+
+}).call(this);
+(function() {
   var Browser, agent;
 
   agent = navigator.userAgent;
@@ -146,20 +151,12 @@
   }
 
 }).call(this);
-
-/*
-
- Selection support, provided to make working with selections and 
- ranges easier.
-*/
-
-
 (function() {
   var Selector;
 
   Selector = (function() {
 
-    Selector.selection = null;
+    Selector.prototype.selection = null;
 
     function Selector() {
       _.bindAll(this);
@@ -223,11 +220,7 @@
 
   })();
 
-  Transit.Selection = new Selector();
-
-  if (typeof module !== "undefined" && module !== null) {
-    module.exports = Transit.Selection;
-  }
+  this.Transit.Selection = new Selector();
 
 }).call(this);
 (function() {
@@ -996,28 +989,16 @@ functionality of the manager.
   })(Backbone.Collection);
 
 }).call(this);
-
-/*
-
-Context base class, all content contexts should inherit 
-this model. Creates a default _type value, as well as 
-sensible defaults for all models to inherit.
-*/
-
-
 (function() {
-  var Context,
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  Context = (function(_super) {
+  this.Transit.Context = (function(_super) {
 
     __extends(Context, _super);
 
     function Context() {
-      this._setType = __bind(this._setType, this);
-
       this._cleanup = __bind(this._cleanup, this);
       return Context.__super__.constructor.apply(this, arguments);
     }
@@ -1028,26 +1009,32 @@ sensible defaults for all models to inherit.
 
     Context.prototype.type = null;
 
+    Context.prototype.deliverable = null;
+
+    Context.prototype.defaults = {
+      _type: null,
+      position: null
+    };
+
     Context.prototype._pendingDestroy = false;
 
     Context.prototype.initialize = function() {
-      var klass;
-      this._setType();
+      var options;
+      Context.__super__.initialize.apply(this, arguments);
+      if (this.type === null) {
+        if (this.get('_type') === null) {
+          this.set('_type', this.constructor.name);
+        }
+        this.type = this.get('_type');
+      }
       if (this.view === null) {
-        klass = Transit.get('view', this.type);
-        if (klass === null) {
-          klass = Transit.get('view', 'Context');
-        }
+        options = {
+          model: this
+        };
         if (this.isNew()) {
-          this.view = new klass({
-            model: this
-          });
-        } else {
-          this.view = new klass({
-            model: this,
-            el: ".managed-context[data-context-id='\#\{@id\}']"
-          });
+          options.el = ".managed-context[data-context-id='\#\{@id\}']";
         }
+        this.view = this.constructor.view === void 0 ? new Transit.View(options) : new this.constructor.view(options);
       }
       this.on('change', function(options) {
         var name, value, _ref;
@@ -1068,25 +1055,9 @@ sensible defaults for all models to inherit.
       return delete this.view;
     };
 
-    Context.prototype._setType = function() {
-      if (this.type !== null) {
-        return true;
-      }
-      if (!this.has('_type')) {
-        this.set('_type', this.constructor.name);
-      }
-      return this.type = this.get('_type');
-    };
-
     return Context;
 
   })(Backbone.Model);
-
-  Transit.Context = Context;
-
-  if (typeof module !== "undefined" && module !== null) {
-    module.exports = Transit.Context;
-  }
 
 }).call(this);
 (function() {
@@ -1352,30 +1323,31 @@ sensible defaults for all models to inherit.
   })(Backbone.View);
 
 }).call(this);
-
-/*
-
-Context view class.
-*/
-
-
 (function() {
-  var Context,
+  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  Context = (function(_super) {
+  this.Transit.View = (function(_super) {
 
-    __extends(Context, _super);
+    __extends(View, _super);
 
-    function Context() {
-      return Context.__super__.constructor.apply(this, arguments);
+    function View() {
+      this.render = __bind(this.render, this);
+      return View.__super__.constructor.apply(this, arguments);
     }
 
-    return Context;
+    View.prototype.tagName = 'div';
+
+    View.prototype.className = 'context';
+
+    View.prototype.render = function() {
+      this.$el.attr('data-context-id', this.model.id).attr('data-context-type', this.model.type);
+      return this;
+    };
+
+    return View;
 
   })(Backbone.View);
-
-  Transit.set('view', 'Context', Context);
 
 }).call(this);
