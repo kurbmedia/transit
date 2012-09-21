@@ -1,4 +1,4 @@
-class @Transit.Panel extends Backbone.View
+class @Transit.Panel extends Backbone.Marionette.View
   tagName: 'div'
   className: 'transit-panel'
   title: 'Detail',
@@ -13,21 +13,3 @@ class @Transit.Panel extends Backbone.View
     
     if @$el.attr('id') is undefined
       @$el.attr("id", "transit_panel_#{@cid}")
-
-  initialize:=>
-    
-  activate:()=> 
-    @active = true
-    @$el.addClass('active')
-
-  deactivate:()=> 
-    @active = false
-    @$el.removeClass('active')
-  
-  render:()=>
-    super
-    @
-
-  remove:()=> 
-    super
-    @trigger('remove', @)
