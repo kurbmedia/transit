@@ -523,8 +523,14 @@
       it('creates a contexts object', function() {
         return expect(item.contexts).toBeDefined();
       });
-      return it('.contexts is a Contexts collection', function() {
+      it('.contexts is a Contexts collection', function() {
         return expect(item.contexts instanceof Transit.Contexts).toBeTruthy();
+      });
+      it('creates a region view', function() {
+        return expect(item.view).toBeDefined();
+      });
+      return it('.view is a Transit.Region', function() {
+        return expect(item.view).toBeInstanceOf(Transit.Region);
       });
     });
     describe('building contexts from attributes', function() {
@@ -607,5 +613,10 @@
       });
     });
   });
+
+}).call(this);
+(function() {
+
+  describe('Region', function() {});
 
 }).call(this);

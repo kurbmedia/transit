@@ -77,6 +77,10 @@
 
   this.Transit || (this.Transit = Transit);
 
+  if (typeof module !== "undefined" && module !== null) {
+    module.exports = Transit;
+  }
+
 }).call(this);
 (function() {
   var Cache,
@@ -306,11 +310,14 @@
 
 }).call(this);
 (function() {
-  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+  var Transit,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  this.Transit.Manager = (function(_super) {
+  Transit = this.Transit || require('transit');
+
+  Transit.Manager = (function(_super) {
 
     __extends(Manager, _super);
 
@@ -405,6 +412,10 @@
     return Manager;
 
   })(Backbone.View);
+
+  if (typeof module !== "undefined" && module !== null) {
+    module.exports = Transit.Manager;
+  }
 
 }).call(this);
 (function() {
@@ -1111,6 +1122,8 @@ functionality of the manager.
     __extends(Deliverable, _super);
 
     function Deliverable() {
+      this._view_options = __bind(this._view_options, this);
+
       this._build_contexts = __bind(this._build_contexts, this);
 
       this.invalidate = __bind(this.invalidate, this);
@@ -1119,7 +1132,13 @@ functionality of the manager.
 
     Deliverable.prototype.contexts = null;
 
+    Deliverable.prototype.type = null;
+
+    Deliverable.prototype.view = null;
+
     Deliverable.prototype.initialize = function() {
+      this.type || (this.type = this.constructor.name);
+      this.view || (this.view = new Transit.Region(this._view_options));
       this.contexts || (this.contexts = new Transit.Contexts());
       this.on('change:contexts', this._build_contexts);
       this._build_contexts();
@@ -1161,6 +1180,17 @@ functionality of the manager.
       this.contexts.reset(contexts);
       delete this.attributes['contexts'];
       return this;
+    };
+
+    Deliverable.prototype._view_options = function() {
+      var options;
+      options = {
+        model: this
+      };
+      if (this.isNew()) {
+        options.el = "[data-region-id='\#\{@id\}']";
+      }
+      return options;
     };
 
     return Deliverable;
@@ -1347,6 +1377,26 @@ functionality of the manager.
     };
 
     return View;
+
+  })(Backbone.View);
+
+}).call(this);
+(function() {
+  var Transit,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  Transit = this.Transit || require('transit');
+
+  Transit.Region = (function(_super) {
+
+    __extends(Region, _super);
+
+    function Region() {
+      return Region.__super__.constructor.apply(this, arguments);
+    }
+
+    return Region;
 
   })(Backbone.View);
 

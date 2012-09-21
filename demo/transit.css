@@ -4,7 +4,7 @@ html.transit-ui-active { margin-right: 310px; }
 
 html.transit-ui-hidden { margin-right: 0; }
 
-#transit_ui { z-index: 10000; position: fixed; top: 0px; left: 0px; right: 0px; width: 100%; height: 1px; overflow: visible; /* Allow for input prepend/append in search forms */ /* White icons with optional class, or on hover/active states of certain elements */ /* move down carets for tabs */ @-webkit-keyframes progress-bar-stripes { from { background-position: 40px 0; }
+#transit_ui { z-index: 10000; position: fixed; top: 0px; left: 0px; right: 0px; width: 100%; height: 1px; overflow: visible; -webkit-transition: width 0.3s ease-out; -moz-transition: width 0.3s ease-out; -o-transition: width 0.3s ease-out; transition: width 0.3s ease-out; /* Allow for input prepend/append in search forms */ /* White icons with optional class, or on hover/active states of certain elements */ /* move down carets for tabs */ @-webkit-keyframes progress-bar-stripes { from { background-position: 40px 0; }
   to { background-position: 0 0; } }
  @-moz-keyframes progress-bar-stripes { from { background-position: 40px 0; }
   to { background-position: 0 0; } }
@@ -739,7 +739,8 @@ html.transit-ui-hidden { margin-right: 0; }
 #transit_ui.hidden #transit_ui_toolbar { right: -400px; }
 #transit_ui div.alert { margin-right: 400px; margin-top: 10px; margin-left: 10px; position: relative; }
 #transit_ui div.alert .close { display: block; position: absolute; top: 50%; margin-top: -12px; height: 20px; font-size: 18px; line-height: 20px; right: 20px; }
-#transit_ui button.save { position: absolute; top: 20px; right: 20px; }
+#transit_ui button.save { font-size: 12px; position: absolute; top: 20px; right: 20px; }
+#transit_ui button.save i { line-height: 12px; vertical-align: middle; margin-top: -3px; margin-left: -2px; }
 
 #transit_ui_toolbar { position: fixed; top: 0px; right: 0px; bottom: 0px; min-width: 300px; background-image: -webkit-gradient(linear, 0% 50%, 100% 50%, color-stop(0%, rgba(0, 0, 0, 0.8)), color-stop(15px, rgba(0, 0, 0, 0.6)), color-stop(100%, rgba(0, 0, 0, 0.6))); background-image: -webkit-linear-gradient(left, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.6) 15px, rgba(0, 0, 0, 0.6) 100%); background-image: -moz-linear-gradient(left, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.6) 15px, rgba(0, 0, 0, 0.6) 100%); background-image: -o-linear-gradient(left, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.6) 15px, rgba(0, 0, 0, 0.6) 100%); background-image: linear-gradient(left, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.6) 15px, rgba(0, 0, 0, 0.6) 100%); border-left: 1px solid black; -webkit-transition: right 0.3s ease-in-out; -moz-transition: right 0.3s ease-in-out; -o-transition: right 0.3s ease-in-out; transition: right 0.3s ease-in-out; }
 #transit_ui_toolbar h1 { vertical-align: middle; background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #2486b6), color-stop(100%, #1e7098)); background-image: -webkit-linear-gradient(#2486b6 0%, #1e7098 100%); background-image: -moz-linear-gradient(#2486b6 0%, #1e7098 100%); background-image: -o-linear-gradient(#2486b6 0%, #1e7098 100%); background-image: linear-gradient(#2486b6 0%, #1e7098 100%); color: white; margin: 0; text-indent: 1em; font-size: 14px; font-weight: normal; line-height: 3; text-shadow: #1d6d94 1px 1px 0; }

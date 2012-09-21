@@ -56,3 +56,5 @@ jQuery(window).one('load', ()->
 )
 
 @Transit ||= Transit
+
+module?.exports = Transit

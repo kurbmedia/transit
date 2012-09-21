@@ -1,4 +1,6 @@
-class @Transit.Manager extends Backbone.View
+Transit = @Transit or require 'transit'
+
+class Transit.Manager extends Backbone.View
   tagName: 'div'
   className: 'transit-ui'  
   events:
@@ -52,3 +54,5 @@ class @Transit.Manager extends Backbone.View
     event.preventDefault() if event
     return false unless @model
     @model.save
+
+module?.exports = Transit.Manager

@@ -48,6 +48,7 @@ javascripts  = {
     
     'src/views/asset_manager.coffee'
     'src/views/view.coffee'
+    'src/views/region.coffee'
 
   ],
   

@@ -1,7 +1,7 @@
 {
   "name"            : "transit",
   "description"     : "Awesome content delivery.",
-  "url"             : "https://dev.kurbmedia.com/transit",
+  "url"             : "https://kurbmedia.github.com/transit",
   "keywords"        : ["cms", "client", "browser"],
   "author"          : "kurb media, llc <dev@kurbmedia.com>",
   "contributors"    : ["Brent Kirby"],
@@ -13,7 +13,7 @@
   
   "repository"      : {
     "type": "git",
-    "url": "git://github.com/transitcms/interface.git"
+    "url": "git://github.com/kurbmedia/transit.git"
   },
   
   "version"          : "0.0.1"

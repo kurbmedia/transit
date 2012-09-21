@@ -11,6 +11,8 @@ body{ background:#efefef; font:12px 'Helvetica Nueue', 'Helvetica', 'Arial', san
 html.transit-ui-active{ margin-right:310px; }
 html.transit-ui-hidden{ margin-right:0; }
 #transit_ui{ z-index:10000; position:fixed; top:0px; left:0px; right:0px; width:100%; height:1px; overflow:visible;
+  @include transition(width .3s ease-out);
+  
   @import "./bootstrap/type";
   @import "./bootstrap/forms";
   @import "./bootstrap/sprites";
@@ -38,12 +40,12 @@ html.transit-ui-hidden{ margin-right:0; }
   &.hidden{ 
     #transit_ui_toolbar{ right:-400px; }
   }
-  
-
   div.alert{ margin-right:400px; margin-top:10px; margin-left:10px; position:relative;
     .close{ display:block; position:absolute; top:50%; margin-top:-12px; height:20px; font-size:18px; line-height:20px; right:20px; }
   }
-  button.save{ position:absolute; top:20px; right:20px; }
+  button.save{ font-size:12px; position:absolute; top:20px; right:20px; 
+    i{ line-height:12px; vertical-align:middle; margin-top:-3px; margin-left:-2px; }
+  }
 }
 
 #transit_ui_toolbar{ position:fixed; top:0px; right:0px; bottom:0px; min-width:300px;

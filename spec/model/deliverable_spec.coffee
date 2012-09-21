@@ -12,7 +12,14 @@ describe 'Deliverable', ()->
       expect(item.contexts instanceof Transit.Contexts)
         .toBeTruthy()
         
-  
+    it 'creates a region view', ()->
+      expect(item.view)
+        .toBeDefined()
+    
+    it '.view is a Transit.Region', ()->
+      expect(item.view)
+        .toBeInstanceOf(Transit.Region)
+    
   describe 'building contexts from attributes', ()->
     
     beforeEach ()->

@@ -2,8 +2,12 @@ $ = window.$ || Backbone.$
 
 class Deliverable extends Backbone.Model
   contexts: null
-
+  type: null
+  view: null
   initialize:()-> 
+    
+    @type ||= @constructor.name
+    @view ||= new Transit.Region(@_view_options)
     @contexts ||= new Transit.Contexts()
     @on('change:contexts', @_build_contexts)
     @_build_contexts()
@@ -32,6 +36,13 @@ class Deliverable extends Backbone.Model
     @contexts.reset(contexts)
     delete @attributes['contexts']
     @
+  
+  # Options for constructing the view
+  _view_options:()=>
+    options = 
+      model: @
+    options.el = "[data-region-id='\#\{@id\}']" if @isNew()
+    options
   
 
 ##
