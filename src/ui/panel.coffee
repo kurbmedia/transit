@@ -1,10 +1,11 @@
-class @Transit.Panel extends Backbone.Marionette.View
+Transit = @Transit or require 'transit'
+
+class Transit.Panel extends Backbone.Marionette.ItemView
   tagName: 'div'
   className: 'transit-panel'
   title: 'Detail',
   icon: ''
   active: false
-  
   constructor:->
     super
     for prop in ['title', 'icon']
@@ -13,3 +14,6 @@ class @Transit.Panel extends Backbone.Marionette.View
     
     if @$el.attr('id') is undefined
       @$el.attr("id", "transit_panel_#{@cid}")
+
+@Transit.Panel  = Transit.Panel
+module?.exports = Transit.Panel

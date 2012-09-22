@@ -1,43 +1,31 @@
 Transit = @Transit or require 'transit'
 
 class Transit.Manager extends Backbone.Marionette.Layout
-  tagName: 'div'
-  className: 'transit-ui'
-  id: 'transit_ui'
-  events:
-    'click button.save' : 'save'
-
+  className: 'transit-manager'
   toolBar: null
+  ui:
+    heading: 'h1'
   
-  initialize: ->
-    super
+  events:
+    'click button.save': 'save'
+
+  templateHelpers: ()->
+    options =
+      heading: "Manage #{@model.type}"
+    options
+
+  initialize: -> @render()
+  
+  add:(panels...)-> @toolBar.add(panels...)
+  
+  onRender:()=>    
     @toolBar = new Transit.Toolbar()
-    @render()
-    $('body').append(@el)
-    @append(@toolBar.el)
-
-  append:(node)-> @$el.append(node)
+    @on('close', @toolBar.close)
+    @$el.append @toolBar.el
   
-  hide:()=> 
-    @$el.addClass('hidden') 
-    $('html').addClass('transit-ui-hidden')
-      .removeClass('transit-ui-active')
-    Transit.vent.trigger('ui:hide')
-    @
+  drop:(panel)-> @toolBar.drop(panel)
   
-  prepend:(node)-> @$el.prepend(node)
-
-  show:()=> 
-    @$el.removeClass('hidden')
-    $('html').removeClass('transit-ui-hidden')
-      .addClass('transit-ui-active')
-    Transit.vent.trigger('ui:show')
-    @
-
-  save:(event)=>
-    event.preventDefault() if event
-    return false unless @model
-    @model.save
+  save:()-> @model.save()
 
 @Transit.Manager = Transit.Manager
 module?.exports  = Transit.Manager

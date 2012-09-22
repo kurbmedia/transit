@@ -1,3 +1,5 @@
+Transit = @Transit || require 'transit'
+
 class Selector
   selection: null
   constructor: ()-> _.bindAll(@)
@@ -40,5 +42,5 @@ class Selector
     @selection = @get()
     @selection
 
-
-@Transit.Selection = new Selector()
+Transit.Selection = @Transit.Selection = new Selector()
+module?.exports   = Transit.Selection

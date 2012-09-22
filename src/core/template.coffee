@@ -1,4 +1,6 @@
-class @Transit.Template
+Transit = @Transit || require 'transit'
+
+class Transit.Template
   @cache: {}
   @compile:(html)-> _.template(html)
   
@@ -34,7 +36,7 @@ class @Transit.Template
     @func(data)
 
 
-@Transit.tpl = (path, callback)->
+Transit.tpl = (path, callback)->
   path     = Transit.Template.pathify(path)
   existing = Transit.Template.find(path)
   
@@ -44,4 +46,6 @@ class @Transit.Template
       callback(template)
   else callback(existing)
 
-  
+module?.exports = 
+  tpl: Transit.tpl
+  Template: Transit.Template

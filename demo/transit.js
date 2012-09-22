@@ -1,12 +1,28 @@
 (function() {
-  var Transit, ready,
+  var Backbone, Interface, Transit, klass, layout, renderer, _, _base, _i, _len, _ref,
     __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-    __slice = [].slice;
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  ready = false;
+  Backbone = this.Backbone || require('backbone');
+
+  _ = this._ || require('underscore');
 
   Transit = null;
+
+  Backbone.Events.one = function(events, callback, context) {
+    var bindCallback;
+    bindCallback = _.bind(function() {
+      this.unbind(events, bindCallback);
+      return callback.apply(context || this, arguments);
+    }, this);
+    return this.bind(events, bindCallback);
+  };
+
+  _ref = [Backbone.Model, Backbone.View, Backbone.Collection];
+  for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+    klass = _ref[_i];
+    (_base = klass.prototype).one || (_base.one = Backbone.Events.one);
+  }
 
   Transit = (function(_super) {
 
@@ -18,22 +34,7 @@
 
     Transit.prototype.version = "0.3.0";
 
-    Transit.prototype.one = function(events, callback, context) {
-      var callone;
-      callone = function() {
-        var args;
-        args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-        callback.apply(null, args);
-        return this.vent.off(events, callone, context);
-      };
-      return this.vent.on(events, callone, context);
-    };
-
-    Transit.prototype.set = function() {
-      var args, _ref;
-      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      return (_ref = this.cache).set.apply(_ref, args);
-    };
+    Transit.prototype.one = Backbone.Events.one;
 
     return Transit;
 
@@ -42,36 +43,82 @@
   Transit = new Transit();
 
   Transit.manage = function(model, callback) {
-    var delayed;
-    delayed = function() {
-      var manager;
-      manager = new Transit.Manager({
-        model: model
-      });
-      if (typeof callback === "function") {
-        callback(manager);
-      }
-      return manager;
-    };
-    if (ready === true) {
-      return delayed();
-    } else {
-      this.vent.on('ready', (function() {
-        return delayed(manager);
-      }));
+    var manager;
+    manager = new Transit.Manager({
+      model: model
+    });
+    layout.manager.show(manager);
+    this.vent.trigger('manage', model, manager);
+    if (typeof callback === "function") {
+      callback(manager);
     }
-    return this;
+    return manager;
   };
+
+  Interface = (function(_super) {
+
+    __extends(Interface, _super);
+
+    function Interface() {
+      return Interface.__super__.constructor.apply(this, arguments);
+    }
+
+    Interface.prototype.tagName = 'div';
+
+    Interface.prototype.className = 'transit-ui';
+
+    Interface.prototype.id = 'transit_ui';
+
+    Interface.prototype.template = _.template('<div id="transit_manager"></div>');
+
+    Interface.prototype.regions = {
+      manager: '#transit_manager'
+    };
+
+    return Interface;
+
+  })(Backbone.Marionette.Layout);
+
+  layout = null;
+
+  /*---------------------------------------
+    Initializers
+  ---------------------------------------
+  */
+
 
   Transit.addInitializer(function(options) {
     if (options == null) {
       options = {};
     }
-    if (!_.has(options, 'preload')) {
-      ready = true;
-      return true;
-    }
+    layout = new Interface();
+    layout.render();
+    return $('body').append(layout.el);
   });
+
+  /*---------------------------------------
+   Template fixes
+  ---------------------------------------
+  */
+
+
+  renderer = Backbone.Marionette.Renderer.render;
+
+  Backbone.Marionette.Renderer.render = function(template, data) {
+    if (_.isFunction(template)) {
+      return template(data);
+    }
+    if (_.isObject(template) && template.type === 'handlebars') {
+      template.template(_.extend(data, template.data), template.options);
+    }
+    return renderer(template, data);
+  };
+
+  /*---------------------------------------
+   Exports
+  ---------------------------------------
+  */
+
 
   this.Transit || (this.Transit = Transit);
 
@@ -81,58 +128,7 @@
 
 }).call(this);
 (function() {
-  var Cache,
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
-
-  Cache = (function() {
-
-    function Cache() {
-      this.drop = __bind(this.drop, this);
-
-      this.set = __bind(this.set, this);
-
-      this.get = __bind(this.get, this);
-
-    }
-
-    Cache.prototype.view = {};
-
-    Cache.prototype.context = {};
-
-    Cache.prototype.tpl = {};
-
-    Cache.prototype.get = function(type, name) {
-      var found;
-      type = type.toLowerCase();
-      name = name.toLowerCase();
-      found = this[type][name];
-      if (found === void 0) {
-        return null;
-      } else {
-        return found;
-      }
-    };
-
-    Cache.prototype.set = function(type, name, obj) {
-      type = type.toLowerCase();
-      name = name.toLowerCase();
-      return this[type][name] = obj;
-    };
-
-    Cache.prototype.drop = function(type, name) {
-      delete this[type][name];
-      return this;
-    };
-
-    return Cache;
-
-  })();
-
-  this.Transit.cache = new Cache();
-
-}).call(this);
-(function() {
-  var Browser, agent;
+  var Browser, Transit, agent;
 
   agent = navigator.userAgent;
 
@@ -146,7 +142,9 @@
     android: /android (\d+)/i.test(agent)
   };
 
-  Transit.browser = Browser;
+  Transit = this.Transit || require('transit');
+
+  Transit.browser = this.Transit.browser = Browser;
 
   if (typeof module !== "undefined" && module !== null) {
     module.exports = Transit.browser;
@@ -154,7 +152,9 @@
 
 }).call(this);
 (function() {
-  var Selector;
+  var Selector, Transit;
+
+  Transit = this.Transit || require('transit');
 
   Selector = (function() {
 
@@ -222,13 +222,20 @@
 
   })();
 
-  this.Transit.Selection = new Selector();
+  Transit.Selection = this.Transit.Selection = new Selector();
+
+  if (typeof module !== "undefined" && module !== null) {
+    module.exports = Transit.Selection;
+  }
 
 }).call(this);
 (function() {
-  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+  var Transit,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
-  this.Transit.Template = (function() {
+  Transit = this.Transit || require('transit');
+
+  Transit.Template = (function() {
 
     Template.cache = {};
 
@@ -291,7 +298,7 @@
 
   }).call(this);
 
-  this.Transit.tpl = function(path, callback) {
+  Transit.tpl = function(path, callback) {
     var existing;
     path = Transit.Template.pathify(path);
     existing = Transit.Template.find(path);
@@ -306,12 +313,20 @@
     }
   };
 
+  if (typeof module !== "undefined" && module !== null) {
+    module.exports = {
+      tpl: Transit.tpl,
+      Template: Transit.Template
+    };
+  }
+
 }).call(this);
 (function() {
   var Transit,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+    __slice = [].slice;
 
   Transit = this.Transit || require('transit');
 
@@ -320,64 +335,52 @@
     __extends(Manager, _super);
 
     function Manager() {
-      this.save = __bind(this.save, this);
-
-      this.show = __bind(this.show, this);
-
-      this.hide = __bind(this.hide, this);
+      this.onRender = __bind(this.onRender, this);
       return Manager.__super__.constructor.apply(this, arguments);
     }
 
-    Manager.prototype.tagName = 'div';
+    Manager.prototype.className = 'transit-manager';
 
-    Manager.prototype.className = 'transit-ui';
+    Manager.prototype.toolBar = null;
 
-    Manager.prototype.id = 'transit_ui';
+    Manager.prototype.ui = {
+      heading: 'h1'
+    };
 
     Manager.prototype.events = {
       'click button.save': 'save'
     };
 
-    Manager.prototype.toolBar = null;
+    Manager.prototype.templateHelpers = function() {
+      var options;
+      options = {
+        heading: "Manage " + this.model.type
+      };
+      return options;
+    };
 
     Manager.prototype.initialize = function() {
-      Manager.__super__.initialize.apply(this, arguments);
+      return this.render();
+    };
+
+    Manager.prototype.add = function() {
+      var panels, _ref;
+      panels = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      return (_ref = this.toolBar).add.apply(_ref, panels);
+    };
+
+    Manager.prototype.onRender = function() {
       this.toolBar = new Transit.Toolbar();
-      this.render();
-      $('body').append(this.el);
-      return this.append(this.toolBar.el);
+      this.on('close', this.toolBar.close);
+      return this.$el.append(this.toolBar.el);
     };
 
-    Manager.prototype.append = function(node) {
-      return this.$el.append(node);
+    Manager.prototype.drop = function(panel) {
+      return this.toolBar.drop(panel);
     };
 
-    Manager.prototype.hide = function() {
-      this.$el.addClass('hidden');
-      $('html').addClass('transit-ui-hidden').removeClass('transit-ui-active');
-      Transit.vent.trigger('ui:hide');
-      return this;
-    };
-
-    Manager.prototype.prepend = function(node) {
-      return this.$el.prepend(node);
-    };
-
-    Manager.prototype.show = function() {
-      this.$el.removeClass('hidden');
-      $('html').removeClass('transit-ui-hidden').addClass('transit-ui-active');
-      Transit.vent.trigger('ui:show');
-      return this;
-    };
-
-    Manager.prototype.save = function(event) {
-      if (event) {
-        event.preventDefault();
-      }
-      if (!this.model) {
-        return false;
-      }
-      return this.model.save;
+    Manager.prototype.save = function() {
+      return this.model.save();
     };
 
     return Manager;
@@ -409,13 +412,16 @@
       return Modal.__super__.constructor.apply(this, arguments);
     }
 
-    Modal.handler = function(instance) {
-      return $(instance.$el).modal({
+    Modal.prototype.handler = function() {
+      var _this = this;
+      this.$el.modal({
         show: true
       }).one('hidden', function(event) {
-        Transit.trigger('modal:close', instance);
-        instance.trigger('close');
-        return $('div.modal-backdrop:eq(0)').remove();
+        Transit.vent.trigger('modal:close', _this);
+        return _this.trigger('close');
+      });
+      return this.one('modal:close', function() {
+        return _this.$el.modal('hide');
       });
     };
 
@@ -424,7 +430,7 @@
     Modal.prototype.className = 'transit-modal';
 
     Modal.prototype.events = {
-      'click a[data-action]': 'perform'
+      'click a[data-action],button[data-action]': 'perform'
     };
 
     Modal.prototype.initialize = function() {
@@ -438,16 +444,20 @@
     };
 
     Modal.prototype.close = function() {
-      this.trigger('close');
+      this.$el.trigger('hidden');
       this.remove();
       return this;
     };
 
     Modal.prototype.perform = function(event) {
-      var link;
+      var acts, link;
       event.preventDefault();
       link = $(event.currentTarget);
-      return Transit.trigger('modal:action', link.attr('data-action'), this);
+      acts = link.attr('data-action');
+      Transit.vent.trigger('modal:action', acts, this);
+      if (acts === 'close') {
+        return this.trigger('modal:close');
+      }
     };
 
     Modal.prototype.remove = function() {
@@ -457,17 +467,16 @@
     };
 
     Modal.prototype.render = function() {
-      var _this = this;
-      Transit.tpl("/core/modal.jst", function(template) {
-        var el;
-        el = $(template.render(_this.options)).attr('id', "transit_modal_" + _this.cid);
-        _this.setElement(el);
-        _this.trigger('open');
-        Transit.trigger('modal:show', _this);
-        _this.$el.addClass('out');
-        Transit.Modal.handler(_this);
-        return _this.$el.removeClass('out').addClass('in');
-      });
+      var modal;
+      modal = $(this.template(this.options));
+      modal.attr('id', "transit_modal_" + this.cid);
+      $('#transit_ui').append(modal);
+      this.setElement($("#transit_modal_" + this.cid));
+      this.trigger('open');
+      Transit.vent.trigger('modal:show', this);
+      this.$el.addClass('out');
+      this.handler.apply(this);
+      this.$el.removeClass('out').addClass('in');
       return this;
     };
 
@@ -550,10 +559,13 @@
 
 }).call(this);
 (function() {
-  var __hasProp = {}.hasOwnProperty,
+  var Transit,
+    __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  this.Transit.Panel = (function(_super) {
+  Transit = this.Transit || require('transit');
+
+  Transit.Panel = (function(_super) {
 
     __extends(Panel, _super);
 
@@ -584,249 +596,150 @@
 
     return Panel;
 
-  })(Backbone.Marionette.View);
+  })(Backbone.Marionette.ItemView);
+
+  this.Transit.Panel = Transit.Panel;
+
+  if (typeof module !== "undefined" && module !== null) {
+    module.exports = Transit.Panel;
+  }
 
 }).call(this);
-
-/*
-
-The Toolbar is the view that contains all of the editing / management
-panels within the UI. Panels can be added/removed as necessary to extend the 
-functionality of the manager.
-*/
-
-
 (function() {
-  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+  var Tab, Transit,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     __slice = [].slice;
 
-  this.Transit.Toolbar = (function(_super) {
+  Transit = this.Transit || require('transit');
+
+  /*
+  
+  The Toolbar is the view that contains all of the editing / management
+  panels within the UI. Panels can be added/removed as necessary to extend the 
+  functionality of the manager.
+  */
+
+
+  Transit.Toolbar = (function(_super) {
 
     __extends(Toolbar, _super);
 
     function Toolbar() {
-      this.set = __bind(this.set, this);
-
       this.reset = __bind(this.reset, this);
 
-      this.remove = __bind(this.remove, this);
-
-      this.render = __bind(this.render, this);
+      this.drop = __bind(this.drop, this);
 
       this.add = __bind(this.add, this);
-
-      this.initialize = __bind(this.initialize, this);
       return Toolbar.__super__.constructor.apply(this, arguments);
     }
-
-    Toolbar.prototype.heading = null;
-
-    Toolbar.prototype.tabBar = null;
 
     Toolbar.prototype.tagName = 'div';
 
     Toolbar.prototype.className = 'transit-toolbar';
 
-    Toolbar.prototype.id = 'transit_ui_toolbar';
+    Toolbar.prototype.navbar = null;
 
     Toolbar.prototype.regions = {
-      panels: '> div.panels'
+      panels: 'div.panels:eq(0)'
     };
 
+    Toolbar.prototype.events = {
+      "click ul.transit-nav-bar a": 'change'
+    };
+
+    Toolbar.prototype.views = {};
+
     Toolbar.prototype.initialize = function() {
-      var _this = this;
-      this.render();
-      this.panels.on("view:closed", function(view) {
-        return _this.tabBar.remove(view.cid);
-      });
-      return this.heading = this.$('h1');
+      return this.render();
     };
 
     Toolbar.prototype.add = function() {
-      var opener, panel, panels, _i, _len, _results,
-        _this = this;
+      var panel, panels, self, _i, _len;
       panels = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      _results = [];
+      self = this;
       for (_i = 0, _len = panels.length; _i < _len; _i++) {
         panel = panels[_i];
-        if (this.tabBar.find(panel.cid) === void 0) {
-          this.tabBar.append(panel);
-          opener = function(event) {
-            event.preventDefault();
-            return _this.panels.show(panel);
-          };
-          _results.push(panel.tab.find('a').on('click.transit', opener));
-        } else {
-          _results.push(void 0);
+        if (!_.has(this.views, panel.cid)) {
+          this.navbar.append(Tab(panel));
+          this.panels.attachView(panel);
+          this.views[panel.cid] = panel;
         }
       }
-      return _results;
-    };
-
-    Toolbar.prototype.render = function() {
-      Toolbar.__super__.render.apply(this, arguments);
-      if (this.tabBar === null) {
-        this.tabBar = new Transit.Toolbar.TabBar();
+      if ($('> li.active', this.navbar).length === 0) {
+        return $('a:eq(0)', this.navbar).click();
       }
-      this.tabBar.list.find('a:eq(0)').click();
-      return this;
     };
 
-    Toolbar.prototype.remove = function(panel) {
-      return panel.close();
+    Toolbar.prototype.change = function(event) {
+      var link;
+      event.preventDefault();
+      this.navbar.find('li').removeClass('active');
+      link = $(event.currentTarget);
+      link.parent('li').addClass('active');
+      return this.panels.show(this.views[link.data('transit.panel_id')]);
+    };
+
+    Toolbar.prototype.drop = function(panel) {
+      panel.close();
+      delete this.views[panel.cid];
+      $("li[rel='" + panel.cid + "']", this.navbar).off().remove();
+      return panel = null;
+    };
+
+    Toolbar.prototype.onRender = function() {
+      var _this = this;
+      this.navbar = this.$('ul.transit-nav-bar');
+      this.panels.el = this.$('div.panels:eq(0)');
+      return this.panels.getEl = (function() {
+        return _this.$('div.panels:eq(0)');
+      });
     };
 
     Toolbar.prototype.reset = function() {
       this.panels.reset();
-      this.tabBar.reset();
       return this;
-    };
-
-    Toolbar.prototype.set = function(prop, value) {
-      switch (prop) {
-        case 'heading':
-          this.heading.html(value);
-          break;
-        default:
-          return false;
-      }
-      return true;
     };
 
     return Toolbar;
 
   })(Backbone.Marionette.Layout);
 
-  this.Transit.Toolbar.TabBar = (function(_super) {
-
-    __extends(TabBar, _super);
-
-    function TabBar() {
-      this.reset = __bind(this.reset, this);
-
-      this.render = __bind(this.render, this);
-
-      this.remove = __bind(this.remove, this);
-
-      this.prepend = __bind(this.prepend, this);
-
-      this.build = __bind(this.build, this);
-
-      this.insert = __bind(this.insert, this);
-
-      this.find = __bind(this.find, this);
-
-      this.change = __bind(this.change, this);
-
-      this.append = __bind(this.append, this);
-      return TabBar.__super__.constructor.apply(this, arguments);
-    }
-
-    TabBar.prototype.list = null;
-
-    TabBar.prototype.tabs = {};
-
-    TabBar.prototype.initialize = function() {
-      return this.render();
-    };
-
-    TabBar.prototype.append = function(panel) {
-      return this.list.append(this.build(panel));
-    };
-
-    TabBar.prototype.change = function(next) {
-      $('li', this.list).removeClass('active');
-      if (this.find(next) === void 0) {
-        return true;
-      }
-      this.find(next).addClass('active');
-      return this;
-    };
-
-    TabBar.prototype.find = function(id) {
-      return $(this.tabs[id]);
-    };
-
-    TabBar.prototype.insert = function(at, panel) {
-      var item;
-      item = this.build(panel);
-      if (at < _.size(this.tabs)) {
-        return this.el.append(item);
-      }
-      return this.list.find('> li').eq(at).after(item);
-    };
-
-    TabBar.prototype.build = function(panel) {
-      var id, item, link, option, options, text, value;
-      id = panel.cid;
-      text = panel.title;
-      item = $('<li></li>');
-      link = $('<a></a>').text(text);
-      options = _.pick(panel, 'class', 'icon', 'id', 'href', 'rel', 'target');
-      if (_.has(this.tabs, id)) {
-        return this.tabs[id];
-      }
-      for (option in options) {
-        value = options[option];
-        switch (option) {
-          case 'class':
-            link.addClass(value);
-            break;
-          case 'icon':
+  Tab = function(panel) {
+    var link, option, options, value;
+    options = _.defaults({
+      title: panel.title,
+      href: '#'
+    }, _.pick(panel.options, 'class', 'icon', 'id', 'href', 'rel', 'target'));
+    link = $("<a></a>");
+    for (option in options) {
+      value = options[option];
+      switch (option) {
+        case 'class':
+          link.addClass(value);
+          break;
+        case 'title':
+          link.text(value);
+          break;
+        case 'icon':
+          if (value !== "") {
             link.prepend($("<i></i>").addClass("icon-" + value));
-            break;
-          default:
-            link.attr(option, value);
-        }
+          }
+          break;
+        default:
+          link.attr(option, value);
       }
-      link.attr({
-        href: panel.$el.attr('id')
-      }).text(text);
-      item.append(link).attr({
-        id: "#transit_panel_tab_" + id
-      });
-      this.tabs[id] = item;
-      panel.tab = link;
-      return item;
-    };
+    }
+    link.data('transit.panel_id', panel.cid).wrap("<li></li>");
+    return link.parent('li').attr('rel', panel.cid);
+  };
 
-    TabBar.prototype.prepend = function(panel) {
-      return this.list.prepend(this.build(panel));
-    };
+  this.Transit.Toolbar = Transit.Toolbar;
 
-    TabBar.prototype.remove = function(id) {
-      var item;
-      item = this.find(id);
-      item.off('.transit').find('a').off('.transit');
-      delete this.tabs[id];
-      return item.remove();
-    };
-
-    TabBar.prototype.render = function() {
-      if (this.$el) {
-        this.$el.remove();
-      }
-      this.$el = $(this.template());
-      this.list = this.$('ul.transit-nav-bar');
-      return this;
-    };
-
-    TabBar.prototype.reset = function() {
-      var item, pid, _i, _len, _ref, _results;
-      _ref = this.tabs;
-      _results = [];
-      for (item = _i = 0, _len = _ref.length; _i < _len; item = ++_i) {
-        pid = _ref[item];
-        _results.push(this.remove(pid));
-      }
-      return _results;
-    };
-
-    return TabBar;
-
-  })(Backbone.View);
+  if (typeof module !== "undefined" && module !== null) {
+    module.exports = Transit.Toolbar;
+  }
 
 }).call(this);
 (function() {
@@ -1072,7 +985,9 @@ functionality of the manager.
     Deliverable.prototype.view = null;
 
     Deliverable.prototype.initialize = function() {
-      this.type || (this.type = this.constructor.name);
+      if (this.type === null) {
+        this.type = this.constructor.name;
+      }
       this.view || (this.view = new Transit.Region(this._view_options));
       this.contexts || (this.contexts = new Transit.Contexts());
       this.on('change:contexts', this._build_contexts);
@@ -1289,11 +1204,14 @@ functionality of the manager.
 
 }).call(this);
 (function() {
-  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+  var Transit,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  this.Transit.View = (function(_super) {
+  Transit = this.Transit || require('transit');
+
+  Transit.View = (function(_super) {
 
     __extends(View, _super);
 
@@ -1315,24 +1233,13 @@ functionality of the manager.
 
   })(Backbone.View);
 
+  if (typeof module !== "undefined" && module !== null) {
+    module.exports = Transit.View;
+  }
+
 }).call(this);
 (function() {
-  var Transit,
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  Transit = this.Transit || require('transit');
 
-  Transit.Region = (function(_super) {
-
-    __extends(Region, _super);
-
-    function Region() {
-      return Region.__super__.constructor.apply(this, arguments);
-    }
-
-    return Region;
-
-  })(Backbone.View);
 
 }).call(this);

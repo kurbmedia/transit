@@ -1,31 +1,32 @@
 describe "Transit", ()->
   
   it 'creates a global object', ()->
-    expect(window.Transit)
-      .toBeDefined()
+    expect(Transit)
+      .to.exist
   
   describe 'on .manage with model', ()->
     
-    beforeEach ()-> 
-      @item   = new Transit.Deliverable()
-      @manage = Transit.manage(@item)
+    item   = new Transit.Deliverable()
+    manage = Transit.manage(item)
     
     it 'returns an instance of the manager', ()->
-      expect(@manage instanceof Transit.Manager)
-        .toBeTruthy()
+      expect(manage)
+        .to.be.an.instanceof(Transit.Manager)
     
     it 'renders the interface', ()->
-      expect($('#transit_ui'))
-        .toHaveSize(1)
+      expect($('#transit_ui').length)
+        .to.be.above(0)
   
   describe 'the .one event handler', ()->
     
+    callback = null
+    
     beforeEach ()->
-      @callback = sinon.spy()
-      Transit.one('spec:init', @callback)
+      callback = sinon.spy()
+      Transit.one('spec:init', callback)
       Transit.trigger('spec:init')
       Transit.trigger('spec:init')
 
     it 'only runs the callback once', ()->
-      expect(@callback.callCount)
-        .toEqual(1)
+      expect(callback.callCount)
+        .to.equal(1)

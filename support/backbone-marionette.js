@@ -1,3 +1,8 @@
+if (!Backbone && (typeof require !== 'undefined')) Backbone = require('backbone');
+if (!_ && (typeof require !== 'undefined')) _ = require('underscore');
+
+var root = this;
+
 // Backbone.Marionette, v0.9.13
 // Copyright (c)2012 Derick Bailey, Muted Solutions, LLC.
 // Distributed under MIT license
@@ -1382,4 +1387,8 @@ var slice = Array.prototype.slice;
 
 
   return Marionette;
-})(Backbone, _, window.jQuery || window.Zepto || window.ender);
+})(Backbone, _, root.jQuery || root.Zepto || root.ender);
+
+if (typeof module !== "undefined" && module !== null) {
+  module.exports = Backbone.Marionette;
+}

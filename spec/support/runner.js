@@ -2,71 +2,30 @@
 
   describe("Transit", function() {
     it('creates a global object', function() {
-      return expect(window.Transit).toBeDefined();
+      return expect(Transit).to.exist;
     });
     describe('on .manage with model', function() {
-      beforeEach(function() {
-        this.item = new Transit.Deliverable();
-        return this.manage = Transit.manage(this.item);
-      });
+      var item, manage;
+      item = new Transit.Deliverable();
+      manage = Transit.manage(item);
       it('returns an instance of the manager', function() {
-        return expect(this.manage instanceof Transit.Manager).toBeTruthy();
+        return expect(manage).to.be.an["instanceof"](Transit.Manager);
       });
       return it('renders the interface', function() {
-        return expect($('#transit_ui')).toHaveSize(1);
+        return expect($('#transit_ui').length).to.be.above(0);
       });
     });
     return describe('the .one event handler', function() {
+      var callback;
+      callback = null;
       beforeEach(function() {
-        this.callback = sinon.spy();
-        Transit.one('spec:init', this.callback);
+        callback = sinon.spy();
+        Transit.one('spec:init', callback);
         Transit.trigger('spec:init');
         return Transit.trigger('spec:init');
       });
       return it('only runs the callback once', function() {
-        return expect(this.callback.callCount).toEqual(1);
-      });
-    });
-  });
-
-}).call(this);
-(function() {
-
-  describe('Cache', function() {
-    var lookup;
-    it('attaches itself to Transit', function() {
-      return expect(Transit.cache).toBeDefined();
-    });
-    lookup = function(name) {
-      return Transit.get('context', name);
-    };
-    it('stores items as an object, by type', function() {
-      return expect(Transit.cache.context).toBeDefined();
-    });
-    describe('when an item is added', function() {
-      beforeEach(function() {
-        return Transit.set('context', 'Sample', 'test');
-      });
-      it('is stored by the specified type', function() {
-        return expect(Transit.cache.context['sample']).toBeDefined();
-      });
-      return it('automatically lowercases the type', function() {
-        return expect(Transit.cache.context['Sample']).toBeUndefined();
-      });
-    });
-    return describe('when a item is requested', function() {
-      return describe('and the item exists', function() {
-        beforeEach(function() {
-          return Transit.set('context', 'Sample', 'test');
-        });
-        it('returns the item', function() {
-          return expect(lookup('sample')).toBe('test');
-        });
-        return describe('and the item does not exist', function() {
-          return it('returns null', function() {
-            return expect(lookup('missing')).toBeNull();
-          });
-        });
+        return expect(callback.callCount).to.equal(1);
       });
     });
   });
@@ -80,73 +39,6 @@
 (function() {
 
   describe('Selection', function() {});
-
-}).call(this);
-(function() {
-
-  describe('Templates', function() {
-    var pathify;
-    pathify = function(path) {
-      return Transit.Template.pathify(path);
-    };
-    beforeEach(function() {
-      return Transit.Template.url = '/transit/views';
-    });
-    it('has a class level cache', function() {
-      var result;
-      result = _.isObject(Transit.Template.cache);
-      return expect(result).toBeTruthy();
-    });
-    describe('@pathify', function() {
-      beforeEach(function() {
-        return this.pathname = "/transit/views/core/test.jst";
-      });
-      describe('when a path includes view_path', function() {
-        beforeEach(function() {
-          return this.result = pathify("/transit/views/core/test.jst");
-        });
-        return it('returns the orignal path', function() {
-          return expect(this.result).toEqual(this.pathname);
-        });
-      });
-      return describe('when a path does not include view_path', function() {
-        beforeEach(function() {
-          return this.result = pathify("/core/test.jst");
-        });
-        return it('returns the path including view_path', function() {
-          return expect(this.result).toEqual(this.pathname);
-        });
-      });
-    });
-    return describe('template caching', function() {
-      describe('when a view is set with .set', function() {
-        beforeEach(function() {
-          Transit.Template.set('/spec/set.jst', "test");
-          return this.template = Transit.Template.find('/spec/set.jst');
-        });
-        it('should cache the set template', function() {
-          return expect(this.template).toBeDefined();
-        });
-        it('sets the template path from the path', function() {
-          return expect(this.template.path).toEqual('/transit/views/spec/set.jst');
-        });
-        it('sets the source from the source', function() {
-          return expect(this.template.source).toEqual("test");
-        });
-        return it('generates a compiled function', function() {
-          return expect(this.template.func instanceof Function).toBeTruthy();
-        });
-      });
-      return describe('compile', function() {
-        beforeEach(function() {
-          return this.template = Transit.Template.compile("test");
-        });
-        return it('generates a compiled template', function() {
-          return expect(this.template instanceof Function).toBeTruthy();
-        });
-      });
-    });
-  });
 
 }).call(this);
 (function() {
@@ -437,35 +329,37 @@
 
     })(Transit.View);
     describe('any instance', function() {
-      beforeEach(function() {
-        return this.item = new Transit.Context();
-      });
+      var item;
+      item = new Transit.Context();
       it('assigns a .type value from the name', function() {
-        return expect(this.item.type).toEqual('Context');
+        return expect(item.type).to.equal('Context');
       });
       it('assigns the _type attribute from the name', function() {
-        return expect(this.item.type).toEqual('Context');
+        return expect(item.type).to.equal('Context');
       });
       it('assigns a view object', function() {
-        return expect(this.item.view).toBeDefined();
+        return expect(item.view).to.exist;
       });
       describe('when it has a view element', function() {
         beforeEach(function() {
           Transit.Context.view = ContextView;
-          return this.item = new Transit.Context();
+          return item = new Transit.Context();
+        });
+        afterEach(function() {
+          return Transit.Context.view = Transit.View;
         });
         return it('creates a view from that element', function() {
-          return expect(this.item.view).toBeInstanceOf(ContextView);
+          return expect(item.view).to.be.an["instanceof"](ContextView);
         });
       });
       return describe('when it does not have a view element', function() {
         return it('creates a view from Transit.View', function() {
-          return expect(this.item.view).toBeInstanceOf(Transit.View);
+          return expect(item.view).to.be.an["instanceof"](Transit.View);
         });
       });
     });
     return describe('a subclass', function() {
-      var Audio;
+      var Audio, audio;
       Audio = (function(_super) {
 
         __extends(Audio, _super);
@@ -477,32 +371,27 @@
         return Audio;
 
       })(Transit.Context);
-      beforeEach(function() {
-        return this.audio = new Audio();
-      });
+      audio = new Audio();
       it('assigns a .type value from the name', function() {
-        return expect(this.audio.type).toEqual('Audio');
+        return expect(audio.type).to.equal('Audio');
       });
       it('assigns the _type attribute from the name', function() {
-        return expect(this.audio.get('_type')).toEqual('Audio');
+        return expect(audio.get('_type')).to.equal('Audio');
       });
       it('inherits defaults', function() {
-        return expect(_.has(this.audio.defaults, 'position')).toBeTruthy();
+        return expect(_.has(audio.defaults, 'position')).to.equal(true);
       });
       describe('when no view is defined', function() {
         return it('assigns a context view object', function() {
-          return expect(this.audio.view).toBeInstanceOf(Backbone.View);
+          return expect(audio.view).to.be.an["instanceof"](Backbone.View);
         });
       });
       return describe('when a view is defined', function() {
         beforeEach(function() {
           return Transit.set('view', 'Audio', function() {});
         });
-        it('assigns a view object', function() {
-          return expect(this.audio.view).toBeDefined();
-        });
-        return afterEach(function() {
-          return delete Transit.cache.view['audio'];
+        return it('assigns a view object', function() {
+          return expect(audio.view).to.exist;
         });
       });
     });

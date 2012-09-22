@@ -1,3 +1,5 @@
+Transit = @Transit or require 'transit'
+
 ###
 
 The Toolbar is the view that contains all of the editing / management
@@ -6,118 +8,80 @@ functionality of the manager.
 
 ###
 
-class @Transit.Toolbar extends Backbone.Marionette.Layout
-  heading: null
-  tabBar: null
+class Transit.Toolbar extends Backbone.Marionette.Layout
   tagName: 'div'
   className: 'transit-toolbar'
-  id: 'transit_ui_toolbar'
+  navbar: null
   regions:
-    panels: '> div.panels'
-
-  initialize:()=> 
-    @render()
-    @panels.on "view:closed", (view)=>
-      @tabBar.remove(view.cid)
-    @heading = @$('h1')
+    panels: 'div.panels:eq(0)'
   
+  events:
+    "click ul.transit-nav-bar a" : 'change'
+  
+  views: {}
+  
+  initialize:()-> @render()
+        
   # add one or more panels with tabs
   add:(panels...)=> 
+    self = @
     for panel in panels
-      if @tabBar.find(panel.cid) is undefined
-        @tabBar.append(panel)
-        opener = (event)=>
-          event.preventDefault()
-          @panels.show(panel)
-        panel.tab.find('a')
-          .on('click.transit', opener)
+      unless _.has(@views, panel.cid)
+        @navbar.append( Tab(panel) )
+        @panels.attachView(panel)
+        @views[panel.cid] = panel
+    if $('> li.active', @navbar).length is 0
+      $('a:eq(0)', @navbar).click()
   
-  # render the toolbar
-  render:()=>
-    super
-    @tabBar = new Transit.Toolbar.TabBar() if @tabBar is null
-    @tabBar.list.find('a:eq(0)').click()
-    @
-  
+  change: (event)->
+    event.preventDefault()
+    @navbar.find('li')
+      .removeClass('active')
+    link = $(event.currentTarget)
+    link.parent('li')
+      .addClass('active')
+    @panels.show( @views[link.data('transit.panel_id')] )
+    
   # remove a single panel
-  remove:(panel)=> panel.close()
+  drop:(panel)=> 
+    panel.close()
+    delete @views[panel.cid]
+    $("li[rel='#{panel.cid}']", @navbar)
+      .off()
+      .remove()
+
+    panel = null
+  
+  onRender:()->
+    @navbar       = @$('ul.transit-nav-bar')
+    @panels.el    = @$('div.panels:eq(0)')
+    @panels.getEl = (=> @$('div.panels:eq(0)'))
   
   # remove all panels
   reset:()=> 
     @panels.reset()
-    @tabBar.reset()
     @
-  
-  # set a property or attribute on the toolbar
-  set: (prop, value)=>
-    switch prop
-      when 'heading' then @heading.html(value)
-      else return false
-    true
 
-## Toolbar tabs
 
-class @Transit.Toolbar.TabBar extends Backbone.View
-  list: null
-  tabs: {}
+Tab = (panel)->
+  options = _.defaults({ title: panel.title, href: '#' }, 
+    _.pick( panel.options, 'class', 'icon', 'id', 'href', 'rel', 'target' )
+  )
   
-  initialize:-> @render()
-  
-  append:(panel)=> @list.append( @build(panel) )
-  
-  change: (next)=>
-    $('li', @list).removeClass('active')
-    return true if @find(next) is undefined
-    @find(next).addClass('active')
-    @
-  
-  find:(id)=> $(@tabs[id])
-      
-  insert:(at, panel)=>
-    item = @build(panel) 
-    if at < _.size @tabs
-      return @el.append( item )
-    @list.find('> li').eq(at)
-      .after( item )
-    
-  build:(panel)=> 
-    id     = panel.cid
-    text   = panel.title
-    item   = $('<li></li>')
-    link   = $('<a></a>').text(text)
-    options = _.pick(panel, 'class', 'icon', 'id', 'href', 'rel', 'target')
-    
-    return @tabs[id] if _.has @tabs, id
-    
-    for option, value of options
-      switch option
-        when 'class' then link.addClass(value)
-        when 'icon'
-          link.prepend $("<i></i>").addClass("icon-#{value}")
-        else link.attr(option, value)
-    
-    link.attr( href: panel.$el.attr('id') )
-      .text(text)
-    item.append(link)
-      .attr( id: "#transit_panel_tab_#{id}" )
+  link = $("<a></a>")
+  for option, value of options
+    switch option
+      when 'class' then link.addClass(value)
+      when 'title' then link.text(value)
+      when 'icon'
+        link.prepend $("<i></i>").addClass("icon-#{value}") unless value is ""
+      else link.attr(option, value)
 
-    @tabs[id]  = item
-    panel.tab = link
-    item
-  
-  prepend:(panel)=> @list.prepend( @build(panel) )
-  
-  remove:(id)=> 
-    item = @find(id)
-    item.off('.transit')
-      .find('a').off('.transit')
-    delete @tabs[id]
-    item.remove()
-  
-  render:=>
-    @$el.remove() if @$el
-    @$el = $(@template())
-    @list = @$('ul.transit-nav-bar')
-    @
-  
-  reset:=> @remove(pid) for pid, item in @tabs
+  link.data('transit.panel_id', panel.cid)
+    .wrap("<li></li>")
+  link.parent('li')
+    .attr('rel', panel.cid)
+
+
+@Transit.Toolbar = Transit.Toolbar
+module?.exports  = Transit.Toolbar

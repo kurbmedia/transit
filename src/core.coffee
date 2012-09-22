@@ -1,36 +1,69 @@
-ready   = false
-Transit = null
+Backbone = @Backbone or require('backbone')
+_ = this._ or require('underscore')
+
+Transit  = null
+layout  = null
+
+Backbone.Events.one = (events, callback, context)->
+  bindCallback = _.bind(()->
+    @unbind(events, bindCallback);
+    callback.apply(context || @, arguments)
+  , @)
+  @bind(events, bindCallback)
+
+for klass in [Backbone.Model, Backbone.View, Backbone.Collection]
+  klass::one ||= Backbone.Events.one
 
 class Transit extends Backbone.Marionette.Application
-  version: "0.3.0"
-  one: (events, callback, context)->
-    callone = (args...)->
-      callback(args...)
-      @vent.off(events, callone, context)
-    @vent.on(events, callone, context)
+  VERSION: "0.3.0"
+  one: Backbone.Events.one
   
-  set: (args...)-> @cache.set(args...)
-
 Transit = new Transit()
 Transit.manage = (model, callback)->
-  delayed = ()-> 
-    manager = new Transit.Manager(model: model)
-    callback?(manager)
-    manager
-  
-  if ready is true
-    return delayed() 
-  else @vent.on 'ready', (-> delayed(manager))
-  @
+  manager = new Transit.Manager(model: model)
+  layout.manager.show(manager)
+  @vent.trigger('manage', model, manager)
+  callback?(manager)
+  manager
 
-# preload templates
+class Interface extends Backbone.Marionette.Layout
+  tagName: 'div'
+  className: 'transit-ui'
+  id: 'transit_ui'
+  template: _.template('<div id="transit_manager"></div>')
+  regions:
+    manager: '#transit_manager'
+
+###---------------------------------------
+  Initializers
+---------------------------------------### 
+
+##
+# create the global interface layout
+# which contains any editing functionality
+#
 Transit.addInitializer (options = {})->
-  unless _.has options, 'preload'
-    ready = true
-    return true 
-  
-  # TODO, preload templates, callback to trigger ready
+   layout = new Interface()
+   layout.render()
+   $('body').append(layout.el)
 
+
+###---------------------------------------
+ Template fixes
+---------------------------------------###
+renderer = Backbone.Marionette.Renderer.render
+Backbone.Marionette.Renderer.render = (template, data)->
+  if _.isFunction(template)
+    return template(data)
+    
+  if _.isObject(template) and template.type is 'handlebars'
+    template.template(_.extend(data, template.data), template.options)
+  renderer(template, data)
+
+
+###---------------------------------------
+ Exports
+---------------------------------------### 
 
 @Transit ||= Transit
 module?.exports = Transit

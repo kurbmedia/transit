@@ -5,8 +5,7 @@ class Deliverable extends Backbone.Model
   type: null
   view: null
   initialize:()-> 
-    
-    @type ||= @constructor.name
+    @type = @constructor.name if @type is null
     @view ||= new Transit.Region(@_view_options)
     @contexts ||= new Transit.Contexts()
     @on('change:contexts', @_build_contexts)

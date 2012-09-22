@@ -1,15 +1,16 @@
 class @Transit.Modal extends Backbone.View
-  @handler: (instance)-> 
-    $(instance.$el).modal(show: true)
-      .one 'hidden', (event)-> 
-        Transit.trigger('modal:close', instance)
-        instance.trigger('close')
-        $('div.modal-backdrop:eq(0)').remove()
+  handler: -> 
+    @$el.modal(show: true)
+      .one 'hidden', (event)=> 
+        Transit.vent.trigger('modal:close', @)
+        @trigger('close')
+    @one 'modal:close', ()=> 
+      @$el.modal('hide')
     
   tagName: 'div'
   className: 'transit-modal'
   events:
-    'click a[data-action]' : 'perform'
+    'click a[data-action],button[data-action]' : 'perform'
   
   initialize: ->
     super
@@ -20,31 +21,34 @@ class @Transit.Modal extends Backbone.View
       content: "Content missing"
   
   close: ()=>
-    @trigger('close')
+    @$el.trigger('hidden')
     @remove()
     @
 
   perform: (event)=>
     event.preventDefault()
     link = $(event.currentTarget)
-    Transit.trigger('modal:action', link.attr('data-action'), this)
+    acts = link.attr('data-action')
+    Transit.vent.trigger('modal:action', acts, this)
+    @trigger('modal:close') if acts is 'close'
+
   
   remove:()->
     @off()
     @trigger('remove')
     super
     
-  render:()=> 
-    Transit.tpl "/core/modal.jst", (template)=>
-      el = $( template.render(@options) )
-        .attr('id', "transit_modal_#{@cid}")
-      @setElement(el)
-      @trigger('open')
-      Transit.trigger('modal:show', this)
-      @$el.addClass('out')
-      Transit.Modal.handler(this)
-      @$el.removeClass('out')
-        .addClass('in')
+  render:()=>
+    modal = $(@template(@options))
+    modal.attr('id', "transit_modal_#{@cid}")
+    $('#transit_ui').append modal
+    @setElement $("#transit_modal_#{@cid}")
+    @trigger('open')
+    Transit.vent.trigger('modal:show', this)
+    @$el.addClass('out')
+    @handler.apply(@)
+    @$el.removeClass('out')
+    .addClass('in')
     @
 
 

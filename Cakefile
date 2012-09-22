@@ -18,6 +18,7 @@ CoffeeScript     = require 'coffee-script'
 {parser, uglify} = require 'uglify-js'
 cleanCSS         = require 'clean-css'
 less             = require 'less'
+async            = require 'async'
 
 # Javascript sources
 # Example configuration for two JS packages,
@@ -25,45 +26,60 @@ less             = require 'less'
 # the second one a coffescript file
 # Coffeescript and JS files can also be mixed in the package
 
-javascripts  = {
-  'build/transit.js': [
-    'src/core.coffee'
-    'src/core/cache.coffee'
-    'src/core/browser.coffee'
-    'src/core/selection.coffee'
-    'src/core/template.coffee'
-    
-    'src/ui/manager.coffee'
-    'src/ui/modal.coffee'
-    'src/ui/notify.coffee'
-    'src/ui/panel.coffee'
-    'src/ui/toolbar.coffee'
-    'src/ui/uploader.coffee'
-    
-    'src/model/asset.coffee'
-    'src/model/assets.coffee'
-    'src/model/context.coffee'
-    'src/model/contexts.coffee'
-    'src/model/deliverable.coffee'
-    
-    'src/views/asset_manager.coffee'
-    'src/views/view.coffee'
-    'src/views/region.coffee'
+libraries = [
+  'src/core.coffee'
+  'src/core/browser.coffee'
+  'src/core/selection.coffee'
 
-  ],
-  
-  'build/themes/bootstrap.js':[
-    'src/themes/bootstrap.coffee'
-  ]
-}
+  'src/ui/manager.coffee'
+  'src/ui/modal.coffee'
+  'src/ui/notify.coffee'
+  'src/ui/panel.coffee'
+  'src/ui/toolbar.coffee'
+  'src/ui/uploader.coffee'
+    
+  'src/model/asset.coffee'
+  'src/model/assets.coffee'
+  'src/model/context.coffee'
+  'src/model/contexts.coffee'
+  'src/model/deliverable.coffee'
+    
+  'src/views/asset_manager.coffee'
+  'src/views/view.coffee'
+  'src/views/region.coffee'
+]
+
+javascripts = []
+javascripts.push
+  path: 'build/transit.js'
+  files: libraries
+  minify: true
+
+javascripts.push
+  path: 'lib/transit.js'
+  files: libraries
+  minify: false
+
+javascripts.push
+  path:  'build/themes/bootstrap.js'
+  files: ['src/themes/bootstrap.coffee']
+  minify: true
+
+javascripts.push
+  path:  'lib/themes/bootstrap.js'
+  files: ['src/themes/bootstrap.coffee']
+  minify: true
 
 do ()->
   specs = []
-  for file in javascripts['build/transit.js']
+  for file in libraries
     file = file.replace(/\.coffee$/,'_spec.coffee')
     specs.push(file.replace(/^src/, 'spec'))
   
-  javascripts['spec/support/runner.js'] = specs
+  javascripts.push
+    path: 'spec/support/runner.js'
+    files: specs
+    minify: false
 
   
 
@@ -79,32 +95,60 @@ stylesheets = {
   ]
 }
 
+task 'test', 'Run mocha suite', -> 
+  runner = "./node_modules/mocha-phantomjs/lib/mocha-phantomjs.coffee"
+  exec "phantomjs #{runner} spec.html", (err, stdout, stderr)->
+    process.stderr.write stderr.toString()
+    print stdout.toString()
+
+test = ->
+  tester = (file) ->
+      (callback) ->
+        mocha = spawn 'mocha',  [
+          '-u', 'bdd', '-R', 'spec', '-t', '20000', 
+          '--require', 'underscore',
+          '--require', 'backbone',
+          '--require', 'spec/support/helper.js',
+          '--require', 'support/backbone-marionette',
+          '--require', 'lib/transit.js',
+          '--colors', "spec/#{file}",
+        ]
+        mocha.stdout.pipe process.stdout, end: false
+        mocha.stderr.pipe process.stderr, end: false
+        mocha.on 'exit', (code) -> callback?(code,code)
+  testFiles = ['support/runner.js']
+  testers = (tester file for file in testFiles)
+  async.series testers, (err, results) -> 
+    passed = results.every (code) -> code is 0
+    process.exit if passed then 0 else 1
+
 
 # Build JS
 task 'build:js', 'Build JS from source', build = (cb) ->
-  file_name = null; file_contents = null
+  file_name = null
+  file_contents = null
+  getdata = (files)->
+    code = ""
+    for source in files
+      file_contents = "#{fs.readFileSync source}"
+      file_name     = source
+      if (/[^.]+$/.exec(source))[0] == 'coffee'
+        code += CoffeeScript.compile file_contents
+      else code += file_contents
+    code
+  
   try
-    for javascript, sources of javascripts
-      code = ''
-      for source in sources
-        file_name = source
-        file_contents = "#{fs.readFileSync source}"
-
-        if (/[^.]+$/.exec(file_name))[0] == 'coffee'
-          code += CoffeeScript.compile file_contents
-        else
-          code += file_contents
-
-      write_javascript javascript, code
-      mini = javascript.replace(/\.js$/,'.min.js')
+    for package in javascripts
+      code = getdata(package.files)
+      write_js( package.path, code )
+      mini = package.path.replace(/\.js$/,'.min.js')
       
-      unless process.env.MINIFY is 'false'
-        write_javascript mini, (
+      if package.minify is true
+        write_js mini, do ()->
+          adds = fs.readFileSync 'support/backbone-marionette.js'
+          code = [adds, code].join("\n\n")
           uglify.gen_code uglify.ast_squeeze uglify.ast_mangle parser.parse code
-        )
-    
-    fs.writeFileSync 'demo/transit.js', fs.readFileSync 'build/transit.js'
-    
+
     cb() if typeof cb is 'function'
   catch e
     print_error e, file_name, file_contents
@@ -137,27 +181,16 @@ task 'watch', 'Watch source files and build JS & CSS', ->
   console.log "Watching for changes..."
 
   # Watch for changes in Javascript files
-  for file in javascript_sources()
-    ((file) ->
-      fs.watchFile file, (curr, prev) ->
-        if +curr.mtime isnt +prev.mtime
-          console.log "Saw change in #{file}"
-          invoke 'build:js'
-    )(file)
+  for package in javascripts
+    for file in package.files
+      ((file) ->
+        fs.watchFile file, { interval: 100}, (curr, prev) ->
+          if +curr.mtime isnt +prev.mtime
+            console.log "Saw change in #{file}"
+            invoke 'build:js'
+      )(file)
 
-  fs.watchFile 'src/css/transit.scss', (curr, prev)->
-    # try
-    #   if +curr.mtime isnt +prev.mtime
-    #     console.log "Compile transit.less"
-    #     exec './node_modules/less/bin/lessc src/css/transit.less > build/transit.css', (err, stdout, stderr)->
-    #       throw err if err
-    #       console.log "Wrote transit.css"
-    #       fs.writeFileSync "demo/transit.css", fs.readFileSync "build/transit.css"
-    #       exec './node_modules/less/bin/lessc -x src/css/transit.less > build/transit.min.css', (err, stdout, stderr)->
-    #         throw err if err
-    #         console.log "Wrote transit.min.css"
-    # catch e
-    #   print_error e
+  fs.watchFile 'src/css/transit.scss', { interval: 100 }, (curr, prev)->
     console.log "Compile transit.scss"
     exec 'sass --compass -t compact src/css/transit.scss build/transit.css', (err, stdout, stderr)->
       throw err if err
@@ -168,7 +201,7 @@ task 'watch', 'Watch source files and build JS & CSS', ->
         console.log "Wrote transit.min.css"
 
 # Write javascript with a header
-write_javascript = (filename, body) ->
+write_js = (filename, body) ->
   fs.writeFileSync filename, """
 #{body}
 """

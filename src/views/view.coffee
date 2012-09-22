@@ -1,4 +1,6 @@
-class @Transit.View extends Backbone.View
+Transit = @Transit or require('transit')
+
+class Transit.View extends Backbone.View
   tagName: 'div'
   className: 'context'
   
@@ -7,3 +9,4 @@ class @Transit.View extends Backbone.View
       .attr('data-context-type', @model.type)
     @
   
+module?.exports = Transit.View

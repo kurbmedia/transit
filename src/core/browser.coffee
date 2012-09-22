@@ -14,8 +14,6 @@ Browser =
   android:  (/android (\d+)/i).test(agent)
 
 
-##
-# Expose object
-#
-Transit.browser = Browser
-module?.exports = Transit.browser
+Transit = @Transit || require 'transit'
+Transit.browser  = @Transit.browser = Browser
+module?.exports  = Transit.browser
