@@ -21,10 +21,10 @@
             <nav id="main_nav">
                 <h5>Navigate</h5>
                 <ul>
-                    <li class="active"><a href="/">Home</a></li>
+                    <li><a href="/">Home</a></li>
                     <li><a href="demo.html">Demo</a></li>
                     <li><a href="arch.html">Architecture</a></li>
-                    <li><a href="interface.html">Interface</a></li>
+                    <li class="active"><a href="interface.html">Interface</a></li>
                 </ul>
             </nav>
             <ul class="downloads">
@@ -38,37 +38,10 @@
                 <h1>Transit</h1>
                 <h3>Simple Content Management</h3>
             </hgroup>
-
-            <p>
-                Transit is a backend agnostic approach to content management, using the power of Backbone.js. Typical CMS platforms are all-in-one 
-                solutions, containing both 
-                a back-end application, and front-end interface. Transit aims to be only the latter. 
-            </p>
             
-            <h3>Goals</h3>
-            <ul class="goals">
-                <li>Provide a solid interface for managing content inline within a page</li>
-                <li>Compatibility with any REST based backend, using JSON as its data structure.</li>
-                <li>Allow easy integration into any backend environment by utilizing conventions over configuration</li>
-                <li>Support full customization of the interface, both functionally and aesthetically. This is achieved through the use of 
-                <code>handler</code> functions and javascript templates.
-                </li>
-            </ul>
-            
-            <h3>Managing Content</h3>
-            <p>...more information coming</p>
-
-            <h3>Contributing</h3>
-
-            <p>Transit is written in <a href="http://jashkenas.github.com/coffee-script/">CoffeeScript</a>, and is designed to function as a NPM package (currently the library has not been pushed).
-            Tests are written using <a href="http://pivotal.github.com/jasmine/">jasmine</a> and coffeescript.</p>
-
-            <p>To contribute, fork the <a href="https://github.com/kurbmedia/transit">repository on GitHub</a> and <a href="http://help.github.com/pull-requests/">send a pull request</a>. Be sure to 
-            include the issue # of your fix or feature implementation (if applicable), as well as any relevant tests/specs. Pull requests without associated (and passing) tests 
-            will not be merged.</p>
-
-            <p>To assist with backend integration, additional libraries are either planned or in development. This includes a Rails engine (nearing completion), and a 
-            restful PHP backend (in planning). If you'd be interested in contributing to either of these, please shoot us a message on Github.</p>
+            <h3>Interface</h3>
+            <p>The UI is designed around the concept of a unified toolbar, which functions similar to a typical "tabbed" interface. The toolbar can contain one or more 
+            panels, which can be added and removed as necessary depending on the content to be managed. </p>
         </section>
         <footer>
             <h3>License</h3>
