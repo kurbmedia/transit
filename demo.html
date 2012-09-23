@@ -1,0 +1,130 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Transit: Backend agnostic content management with Backbone.js</title>
+    <link rel="stylesheet" href="stylesheets/styles.css" />
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css" />
+    <link rel="stylesheet" href="stylesheets/transit.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div id="wrapper" class="wrapper">
+        <a href="https://github.com/kurbmedia/transit" target="_blank"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+        <header id="heading">
+            <h1>Transit</h1>
+            <p>De-Coupled CMS with Backbone.js</p>
+            <p class="view"><a href="https://github.com/kurbmedia/transit" target="_blank">View the Project on GitHub <small>kurbmedia/transit</small></a></p>
+            <nav id="main_nav">
+                <h5>Navigate</h5>
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="arch.html">Architecture</a></li>
+                    <li><a href="interface.html">Interface</a></li>
+                    <li class="active"><a href="demo.html">Try</a></li>
+                </ul>
+            </nav>
+            <ul class="downloads">
+                <li><a href="https://github.com/kurbmedia/transit/zipball/master" target="_blank">Download <strong>ZIP File</strong></a></li>
+                <li><a href="https://github.com/kurbmedia/transit/tarball/master" target="_blank">Download <strong>TAR Ball</strong></a></li>
+                <li><a href="https://github.com/kurbmedia/transit" target="_blank">View On <strong>GitHub</strong></a></li>
+            </ul>
+        </header>
+        <section>
+            <h1>Try It</h1>
+            <p>The default interface uses <a href="http://twitter.github.com/bootstrap" target="_blank">Bootstrap</a> for the style and layout,
+            but can easily be overridden via templates and css.</p>
+            
+            <p>
+                This demo is a work in progress... If you really want to try it...
+                <a href="https://github.com/kurbmedia/transit" target="_blank">download it.</a>
+            </p>
+            
+            <h3>Misc</h3>
+            <ul id="testers">
+                <li><a class="modal" href="#">Open a modal window.</a></li>
+                <li><a class="panel" href="#">Add a new panel</a></li>
+            </ul>
+        </section>
+        <footer>
+            <h3>License</h3>
+            <p>Transit is ©2011-2012 kurb media, llc. Licensed under the <a href="http://en.wikipedia.org/wiki/MIT_License" target="_blank">MIT license</a>. Do whatever you'd like, 
+            but contributing any cool features / functionality you may add would simply make you awesome.</p>
+            
+            <p>
+                This project is maintained by <a href="https://github.com/kurbmedia" target="_blank">kurbmedia</a><br />
+                <small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist" target="_blank">orderedlist</a></small>
+            </p>
+        </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    <script src="javascripts/jquery-1.8.2.js" type="text/javascript"></script>
+    <script src="javascripts/bootstrap.js" type="text/javascript"></script>    
+    <script src="javascripts/underscore-1.3.3.js" type="text/javascript"></script>
+    <script src="javascripts/backbone-0.9.2.js" type="text/javascript"></script>
+    <script src="javascripts/backbone-marionette.js" type="text/javascript" charset="utf-8"></script>
+    <script src="javascripts/handlebars-1.0.rc.1.js" type="text/javascript" charset="utf-8"></script>
+    <script src="javascripts/transit.js" type="text/javascript"></script>
+    <script src="javascripts/transit-bootstrap.js" type="text/javascript"></script>
+    <script type="text/javascript" charset="utf-8">
+    //<![CDATA[
+        $(window).one('load', function(){
+            var Page, panel, content, assets, tester;
+            
+            $('html').addClass('transit-ui-active');
+            
+            var template;
+            Transit.start();
+            Page = new Transit.Deliverable();
+            Page.type = "Page";
+            manager = Transit.manage(Page);
+            panel   = new Transit.Panel({title: 'Info'});
+            content = new Transit.Panel({ title: 'Content' });
+            assets  = new Transit.AssetManager();
+            manager.add(panel, content, assets);
+            window.Page = Page;
+            window.manage = manager;
+            tester = new Transit.Panel({ title: 'New Panel' });
+
+            $('#link_tester').on('click', function(event){
+                event.preventDefault();
+                alert("link accessible.");
+            });
+            
+            $('#testers a.modal').on('click', function(event){
+               event.preventDefault();
+               Transit.modal({ 
+                   title: 'Modal Window Demo', 
+                   content: $('#modal_test_content').html(),
+                   buttons: [
+                       { css: 'btn-primary', action: 'close', text: 'Close It' }
+                   ]
+               });
+            });
+            
+            $('#testers a.panel').toggle(
+                function(event){
+                    event.preventDefault();
+                    $(this).text('Remove the panel');
+                    manager.add(tester);
+                },
+                
+                function(event){
+                    event.preventDefault();
+                    $(this).text('Add a panel');
+                    manager.drop(tester);
+                }
+            )
+        });
+    //]]>
+    </script>
+    <script type="text/plain" id="modal_test_content" charset="utf-8">
+    This is the content within the modal window. It can be text, html etc. Buttons are added via a buttons option and trigger 
+    application-wide events that you can listen to and handle.
+    </script>
+  </body>
+</html>
