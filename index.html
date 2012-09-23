@@ -54,6 +54,10 @@
                 </li>
             </ul>
             
+            <h3>Install</h3>
+            <p>Transit is available as an npm module, or you can use one of the links on the left.</p>
+            <pre class="prettyprint">npm install transit</pre>
+            
             <h3>Managing Content</h3>
             <p>...more information coming</p>
 
@@ -65,7 +69,14 @@
             <p>To contribute, fork the <a href="https://github.com/kurbmedia/transit">repository on GitHub</a> and <a href="http://help.github.com/pull-requests/">send a pull request</a>. Be sure to 
             include the issue # of your fix or feature implementation (if applicable), as well as any relevant tests/specs. Pull requests without associated (and passing) tests 
             will not be merged.</p>
-
+            
+            <p>Tests are written with <a href="https://github.com/visionmedia/mocha" target="_blank">mocha</a> in CoffeeScript. To run them in a 
+            browser environment simply run:</p>
+            <pre class="prettyprint">node support/spec.js</pre>
+            
+            <p>and point your browser to http://localhost. The provided http server will handle compiling the spec files into javascript.</p>
+            
+            <h3>Backend Integration</h3>
             <p>To assist with backend integration, additional libraries are either planned or in development. This includes a Rails engine (nearing completion), and a 
             restful PHP backend (in planning). If you'd be interested in contributing to either of these, please shoot us a message on Github.</p>
         </section>
