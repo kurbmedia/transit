@@ -15,42 +15,36 @@ class Transit.Toolbar extends Backbone.Marionette.Layout
   regions:
     panels: 'div.panels:eq(0)'
   
-  events:
-    "click ul.transit-nav-bar a" : 'change'
-  
-  views: {}
-  
   initialize:()-> @render()
         
   # add one or more panels with tabs
   add:(panels...)=> 
     self = @
     for panel in panels
-      unless _.has(@views, panel.cid)
-        @navbar.append( Tab(panel) )
+      unless @navbar.find("li[rel='#{panel.cid}']").length isnt 0
+        tab = new Tab(panel: panel.cid, title: panel.title, icon: panel.icon)
+        @navbar.append( tab.render(panel).el )
         @panels.attachView(panel)
-        @views[panel.cid] = panel
-    if $('> li.active', @navbar).length is 0
-      $('a:eq(0)', @navbar).click()
-  
-  change: (event)->
-    event.preventDefault()
-    @navbar.find('li')
-      .removeClass('active')
-    link = $(event.currentTarget)
-    link.parent('li')
-      .addClass('active')
-    @panels.show( @views[link.data('transit.panel_id')] )
-    
-  # remove a single panel
-  drop:(panel)=> 
-    panel.close()
-    delete @views[panel.cid]
-    $("li[rel='#{panel.cid}']", @navbar)
-      .off()
-      .remove()
+        mine = @
+        tab.on 'active', ()-> 
+          mine.navbar.find("li")
+            .removeClass('active')
+          @$el.addClass('active')
+          mine.panels.show(@panel)
 
-    panel = null
+        tab.panel = panel
+        panel.tab = tab
+
+    if $('> li.active', @navbar).length is 0 then $('a:eq(0)', @navbar).click()
+    
+  # remove any number of panels
+  drop:(panels...)=> 
+    for panel in panels
+      panel.close()
+      panel.tab.close()
+      delete panel.tab
+      panel = null
+    @
   
   onRender:()->
     @navbar       = @$('ul.transit-nav-bar')
@@ -63,24 +57,42 @@ class Transit.Toolbar extends Backbone.Marionette.Layout
     @
 
 
-Tab = (panel)->
-  options = _.defaults({ title: panel.title, href: '#' }, 
-    _.pick( panel.options, 'class', 'icon', 'id', 'href', 'rel', 'target' )
-  )
+class Tab extends Backbone.Marionette.ItemView
+  template: ()-> ''
+  tagName: 'li'
+  events: 
+    'click > a' : 'choose'
   
-  link = $("<a></a>")
-  for option, value of options
-    switch option
-      when 'class' then link.addClass(value)
-      when 'title' then link.text(value)
-      when 'icon'
-        link.prepend $("<i></i>").addClass("icon-#{value}") unless value is ""
-      else link.attr(option, value)
+  panel: null
+  
+  initialize:()-> 
+    @render()
+    
+  
+  choose:(event)->
+    event.preventDefault()
+    @trigger('active', @)
+  
+  beforeClose:()-> 
+    @$('i,a').off().remove()
+    @panel = null
+    
+  onRender:()->
+    options = _.pick( @options, 'class', 'icon', 'id', 'href', 'rel', 'target', 'title' )
+    @$el.empty()
+    link = $("<a></a>")
+    for option, value of options
+      switch option
+        when 'class' then link.addClass(value)
+        when 'title' then link.text(value)
+        when 'icon'
+          link.prepend $("<i></i>").addClass("icon-#{value}") unless value is ""
+        else link.attr(option, value)
 
-  link.data('transit.panel_id', panel.cid)
-    .wrap("<li></li>")
-  link.parent('li')
-    .attr('rel', panel.cid)
+    @$el.append(link)
+    @$el.attr('rel', @options.panel)
+    @
+  
 
 
 @Transit.Toolbar = Transit.Toolbar

@@ -1,131 +1,105 @@
-describe 'toolBar', ()->
+describe "a manager's Toolbar", ()->
   
   item = new Transit.Deliverable()
-  heading = null
   manager = null
-  toolBar = null
+  toolbar = null
+  navbar  = null
   
-  beforeEach ()-> 
+  before (done)-> 
     manager = Transit.manage(item)
-    manager.render()
-    toolBar = manager.toolBar
-    heading = toolBar.$('h1')
+    done()
+  
+  beforeEach (done)->
+    toolbar = manager.toolBar
+    navbar  = toolbar.navbar
+    done()
   
   it 'creates a view for toolBar', ()->
-    expect(toolBar instanceof Backbone.View)
-      .toBeTruthy()
-  
-  it 'creates a heading node', ()->
-    expect(toolBar.$('h1').length)
-      .toNotEqual(0)
+    expect(toolbar).to.be.an
+      .instanceof(Backbone.Marionette.Layout)
 
   it 'creates a tab-bar list', ()->
-    expect(toolBar.$('ul.transit-nav-bar').length)
-      .toNotEqual(0)
+    expect(toolbar.$('ul'))
+      .to.have.length.above(0)
    
   it 'creates a tab bar instance', ()->
-    expect(toolBar.tabBar)
-       .toBeDefined()
+    expect(toolbar.navbar)
+       .to.exist
   
   describe 'Panels', ()->
-    choose    = ()-> toolBar.$el.find(selector)
-    panel     = new Transit.Panel()
-    panel2    = new Transit.Panel()
-    selector  = ""
 
-    beforeEach ()-> selector = "#transit_panel_#{panel.cid}"
+    choose   = -> toolbar.$(selector)
+    panel    = new Transit.Panel()
+    panel2   = new Transit.Panel()
+    selector = "#transit_panel_#{panel.cid}"
     
     describe 'adding panels with Toolbar.add', ()->
-        
+      
+      before ()-> toolbar.add(panel)
+      after ()-> toolbar.drop(panel)
+      
       it 'adds a panel to the toolbar node', ()->
-        Transit.one "panel:added", ()=>
-          expect(toolBar.$el)
-            .toContain(selector)
-        toolBar.add(panel)
-          
+        expect(toolbar.$(selector))
+          .to.have.length.above(0)
+
       it 'adds a tab to the toolbar\'s tabBar', ()->
-        Transit.one "panel:added", ()=>
-          expect(toolBar.tabBar
-            .find(panel.cid))
-            .toBeDefined()
-        toolBar.add(panel)
+        expect(navbar.find("li[rel='#{panel.cid}']"))
+          .to.have.length.above(0)
         
-    describe 'removing panels with Toolbar.remove', ()->
+    describe 'removing panels with Toolbar.drop', ()->
         
-      afterEach ()->
-        toolBar.reset()
+      afterEach ()-> toolbar.reset()
       
       describe 'when there is only one panel', ()->
         
-        beforeEach ()-> toolBar.reset()
+        beforeEach (done)-> 
+          toolbar.add(panel)
+          done()
           
-        it 'removes the panel by object', ()->
-          runs ()-> toolBar.add(panel)
-          waits(200)
-          runs ()-> toolBar.remove(panel)
-          waits(200)
-          expect(toolBar.$el.find(selector))
-            .toHaveSize(0)
+        it 'removes the panel by object', (done)->
+          toolbar.drop(panel)
+          done()
+          expect(toolbar.$(selector))
+            .to.have.length(0)
           
-        it 'removes the panel by cid', ()->
-          runs ()-> toolBar.add(panel)
-          waits(200)
-          runs ()-> toolBar.remove(panel.cid)
-          waits(200)
-          runs ()->
-            expect(toolBar.$el.find(selector))
-              .toHaveSize(0)
-      
-        it 'removes the associated tab', ()->
-          waits(200)
-          runs ()-> toolBar.remove(panel)
-          expect(toolBar.tabBar
-            .el.find("li"))
-            .toHaveSize(0)
+        it 'removes the associated tab', (done)->
+          toolbar.drop(panel)
+          done()
+          expect(navbar.find("li[rel='#{panel.cid}']"))
+            .to.have.length(0)
   
       describe 'when there are multiple panels', ()->
         
-        beforeEach ()->
-          toolBar.add(panel, panel2)
-          waits(200)
-          runs ()-> toolBar.remove(panel)
+        beforeEach (done)->
+          toolbar.add(panel, panel2)
+          done()
           
-        it 'removes only the requested panel', ()->
-          expect(toolBar.$el.find('div.transit-panel'))
-            .toHaveSize(1)
-          
+        it 'removes only the requested panel', (done)->
+          toolbar.drop(panel)
+          done()
+          expect(toolbar.$('div.transit-panel'))
+            .to.have.length.above(0)
       
-        it 'removes only the associated tab', ()->
-          expect(toolBar.tabBar
-            .el.find("li"))
-            .toHaveSize(1)
+        it 'removes only the associated tab', (done)->
+          toolbar.drop(panel)
+          done()
+          expect(navbar.find("li"))
+            .to.have.length.above(0)
 
     describe 'removing all panels with Toolbar.reset', ()->
       
-      spy = null
+      beforeEach (done)->
+        toolbar.add(panel, panel2)
+        done()
       
-      beforeEach ()->
-        spy = spyOn( toolBar.tabBar, 'remove')
-        toolBar.add(panel, panel2)
-        waits(100)
-        runs ()-> toolBar.reset()
-      
-      it 'removes all panels', ()->
-        expect(toolBar.$el.find('div.transit-panel'))
-          .toHaveSize(0)
-        
+      it 'removes all panels', (done)->
+        toolbar.reset()
+        done()
+        expect(toolbar.$('div.transit-panel'))
+          .to.have.length(0)
 
-      it 'removes all tabs', ()->
-        expect(spy)
-          .toHaveBeenCalledWith(panel.cid)
-        
-  describe '.set', ()->
-    
-    describe 'with "heading"', ()->
-      
-      beforeEach ()-> 
-        toolBar.set('heading', 'Test')
-    
-      it 'sets the toolbar heading', ()->
-        expect(heading.text())
-          .toEqual("Test")
+      it 'removes all tabs', (done)->
+        toolbar.reset()
+        done()
+        expect(navbar.find("li"))
+          .to.have.length(0)

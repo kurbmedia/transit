@@ -69,17 +69,17 @@ javascripts.push
   path:  'lib/themes/bootstrap.js'
   files: ['src/themes/bootstrap.coffee']
   minify: true
-
-do ()->
-  specs = []
-  for file in libraries
-    file = file.replace(/\.coffee$/,'_spec.coffee')
-    specs.push(file.replace(/^src/, 'spec'))
-  
-  javascripts.push
-    path: 'spec/support/runner.js'
-    files: specs
-    minify: false
+# 
+# do ()->
+#   specs = []
+#   for file in libraries
+#     file = file.replace(/\.coffee$/,'_spec.coffee')
+#     specs.push(file.replace(/^src/, 'spec'))
+#   
+#   javascripts.push
+#     path: 'spec/support/runner.js'
+#     files: specs
+#     minify: false
 
   
 

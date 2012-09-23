@@ -18,24 +18,6 @@ describe 'Context', ()->
       expect(item.view)
         .to.exist
         
-    describe 'when it has a view element', ()->
-      
-      beforeEach ()-> 
-        Transit.Context.view = ContextView
-        item = new Transit.Context()
-      
-      afterEach ()-> Transit.Context.view = Transit.View
-      
-      it 'creates a view from that element', ()->
-        expect(item.view)
-          .to.be.an.instanceof(ContextView)
-    
-    describe 'when it does not have a view element', ()->
-      
-      it 'creates a view from Transit.View', ()->
-        expect(item.view).to.be
-          .an.instanceof(Transit.View)
-        
   
   describe 'a subclass', ()->
       
@@ -58,12 +40,11 @@ describe 'Context', ()->
         
       it 'assigns a context view object', ()->
         expect(audio.view)
-          .to.be.an.instanceof(Backbone.View)
+          .to.be.an.instanceof(Transit.View)
       
     describe 'when a view is defined', ()->
         
-      beforeEach ()-> 
-        Transit.set('view', 'Audio', ()->)
+      beforeEach ()-> Audio.view = Transit.View
         
       it 'assigns a view object', ()->
         expect(audio.view)

@@ -1,24 +1,25 @@
 describe 'Deliverable', ()->
+  item = null
   
-  item = new Transit.Deliverable()
+  beforeEach ()-> item = new Transit.Deliverable()
   
   describe 'any instance', ()->
     
     it 'creates a contexts object', ()->
       expect(item.contexts)
-        .toBeDefined()
+        .to.exist
     
     it '.contexts is a Contexts collection', ()->
-      expect(item.contexts instanceof Transit.Contexts)
-        .toBeTruthy()
+      expect(item.contexts)
+        .to.be.an.instanceof(Transit.Contexts)
         
     it 'creates a region view', ()->
       expect(item.view)
-        .toBeDefined()
+        .to.exist
     
     it '.view is a Transit.Region', ()->
       expect(item.view)
-        .toBeInstanceOf(Transit.Region)
+        .to.be.an.instanceof(Transit.Region)
     
   describe 'building contexts from attributes', ()->
     
@@ -30,11 +31,11 @@ describe 'Deliverable', ()->
     
     it 'converts the attributes to a collection', ()->
       expect(item.contexts.length)
-        .toEqual(2)
+        .to.equal(2)
     
     it 'removes the contexts attribute', ()->
       expect(item.get('contexts'))
-        .toBeUndefined()
+        .to.not.exist
       
     afterEach ()-> item.contexts = new Transit.Contexts()
     
@@ -51,8 +52,8 @@ describe 'Deliverable', ()->
     
     it 'creates a key from Transit.Contexts.build_as', ()->
       expect(json['contexts_attributes'])
-        .toBeDefined()
+        .to.exist
     
     it 'uses context data as the value(s)', ()->
       expect(_.size(json['contexts_attributes']))
-        .toEqual(2)
+        .to.equal(2)

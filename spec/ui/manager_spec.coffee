@@ -1,10 +1,10 @@
 describe 'Manager window', ()->
   
-  beforeEach ()-> 
-    @item    = new Transit.Deliverable()
-    @manager = Transit.manage(@item)
-    @heading = @manager.$('h1')
+  item = new Transit.Deliverable()
+  manager = null 
   
-  it 'is an instance of a Backbone.View', ()->
-    expect(@manager instanceof Backbone.View)
-      .toBeTruthy()
+  it 'is an instance of a Marionette.Layout', ()->
+    manager = Transit.manage(item)
+    expect(manager).to.be.an.instanceof(
+      Backbone.Marionette.ItemView
+    )

@@ -5,53 +5,53 @@ describe 'Toolbar panels', ()->
   item   = new Transit.Deliverable()
   tabs   = null
   panels = null
-  tab    = null
   link   = null    
   
   manager = null
   
-  beforeEach ()-> 
+  beforeEach (done)-> 
     manager = Transit.manage(item)
-    manager.render()
     panels  = manager.toolBar.$('div.panels')
-    tabs    = manager.toolBar.tabBar
+    tabs    = manager.toolBar.navbar
+    done()
   
   describe 'Panels', ()->
     
-    describe 'calling Manager.add', ()->
-      tab = null
+    describe 'when passed to Manager.add', ()->
       
-      beforeEach ()->
-        manager.toolBar.add(panel)
-        tab = tabs.tabs[panel.cid]
+      beforeEach (done)->
+        manager.reset()
+        manager.add(panel)
+        done()
       
       it 'adds a tab to the tab bar', ()->
-        expect(tabs.el)
-          .toContain('li')
+        expect(tabs.find('li'))
+          .to.have.length.above(0)
       
       it 'adds a panel to the panels list', ()->
         expect($('div.transit-panel', panels))
-          .toHaveSize(1)
+          .to.have.length.above(0)
       
       describe 'the added tab', ()->
 
         it 'contains a link with the panel\'s title', ()->
-          expect(tab.find('a'))
-            .toHaveText("Detail")
+          expect(tabs.find('a:eq(0)').text())
+            .to.equal("Detail")
 
-      afterEach ()-> panel.remove()
+      afterEach ()-> manager.drop(panel)
       
-    describe 'calling .remove on a panel', ()->
+    describe 'when passed to manager.drop', ()->
       
-      beforeEach ()->
-        manager.toolBar.add(panel)
-        panel.remove()
+      before (done)->
+        manager.add(panel)
+        done()
+        manager.drop(panel)
         panels = manager.$('div.panels')
         
       it 'removes the panel', ()->
         expect(panels.find('div.transit-panel'))
-          .toHaveSize(0)
+          .to.have.length(0)
           
       it 'removes the associated tab', ()->
-        expect($('li', tabs.el))
-          .toHaveSize(0)
+        expect($('li', tabs))
+          .to.have.length(0)

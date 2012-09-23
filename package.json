@@ -18,7 +18,8 @@
     "chai": "latest",
     "sinon": "latest",
     "async": "0.1.22",
-    "requirejs": "2.0.6"
+    "requirejs": "2.0.6",
+    "connect" : "2.4.6"
   },
   
   "repository"      : {

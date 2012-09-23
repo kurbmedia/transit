@@ -8,19 +8,18 @@ describe 'Modal', ()->
       spy  = null
       
       beforeEach ()->
-        spy = jasmine.createSpy('perform')
-        Transit.one('modal:action', spy)
+        spy = sinon.spy()
+        Transit.vent.on('modal:action', spy)
         modal = Transit.modal()
         modal.perform(
-          mockEvent(
-            currentTarget: $('<a data-action="test"></a>')
-          )
+          currentTarget: $('<a data-action="test"></a>')
+          preventDefault:()->
         )
       
       it 'triggers modal:action globally', ()->
-        expect(spy)
-          .toHaveBeenCalled()
+        expect(spy.callCount)
+          .to.equal(1)
       
       it 'passes the action and the modal to the callback', ()->
-        expect(spy)
-          .toHaveBeenCalledWith('test', modal)
+        expect(spy.calledWith('test', modal))
+          .to.be.true

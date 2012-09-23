@@ -19,11 +19,10 @@ class Transit extends Backbone.Marionette.Application
   one: Backbone.Events.one
   
 Transit = new Transit()
-Transit.manage = (model, callback)->
+Transit.manage = (model)->
   manager = new Transit.Manager(model: model)
-  layout.manager.show(manager)
+  layout.interface.show(manager)
   @vent.trigger('manage', model, manager)
-  callback?(manager)
   manager
 
 class Interface extends Backbone.Marionette.Layout
@@ -32,7 +31,7 @@ class Interface extends Backbone.Marionette.Layout
   id: 'transit_ui'
   template: _.template('<div id="transit_manager"></div>')
   regions:
-    manager: '#transit_manager'
+    interface: '#transit_manager'
 
 ###---------------------------------------
   Initializers

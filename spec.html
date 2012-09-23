@@ -30,8 +30,9 @@
         expect = chai.expect;
         Transit.start();
     </script>
-    <script type="text/javascript" src="spec/support/helpers.js"></script>
-    <script type="text/javascript" src="spec/support/runner.js"></script>
+    <% _.each(specs, function(spec){ %>
+    <script type="text/javascript" src="spec/<%=spec%>"></script>
+    <% }); %>
     <script>
     mocha.run(); 
     </script>

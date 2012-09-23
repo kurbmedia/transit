@@ -2,7 +2,8 @@
 
 $transit-blue:#2486B6;
 $blue: $transit-blue;
-$white: #e7e7e7;
+$btnBackground:#e7e7e7;
+$btnBackgroundHighlight:darken(#e7e7e7, 10%);
 $btnPrimaryBackgroundHighlight: $transit-blue;
 $btnPrimaryBackground: lighten($transit-blue, 8%);
 

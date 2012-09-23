@@ -2,12 +2,12 @@ describe 'Notify', ()->
   
   it 'has an error method', ()->
     expect(Transit.Notify['error'])
-      .toBeDefined()
+      .to.exist
 
   it 'has an info method', ()->
     expect(Transit.Notify['info'])
-      .toBeDefined()
+      .to.exist
 
   it 'has a success method', ()->
     expect(Transit.Notify['success'])
-      .toBeDefined()
+      .to.exist

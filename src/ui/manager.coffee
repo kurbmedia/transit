@@ -1,6 +1,6 @@
 Transit = @Transit or require 'transit'
 
-class Transit.Manager extends Backbone.Marionette.Layout
+class Transit.Manager extends Backbone.Marionette.ItemView
   className: 'transit-manager'
   toolBar: null
   ui:
@@ -20,12 +20,14 @@ class Transit.Manager extends Backbone.Marionette.Layout
   
   onRender:()=>    
     @toolBar = new Transit.Toolbar()
-    @on('close', @toolBar.close)
     @$el.append @toolBar.el
   
-  drop:(panel)-> @toolBar.drop(panel)
+  onClose:()=> @toolBar.close()
+  
+  drop:(panels...)-> @toolBar.drop(panels...)
   
   save:()-> @model.save()
+  
+  reset:()-> @toolBar.reset()
 
-@Transit.Manager = Transit.Manager
 module?.exports  = Transit.Manager

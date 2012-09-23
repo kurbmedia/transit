@@ -1,6 +1,7 @@
-Transit = @Transit or require('transit')
+Backbone = @Backbone || require('backbone')
+Transit  = @Transit or require('transit')
 
-class Transit.View extends Backbone.View
+class Transit.View extends Backbone.Marionette.ItemView
   tagName: 'div'
   className: 'context'
   
