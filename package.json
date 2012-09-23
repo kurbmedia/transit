@@ -2,7 +2,7 @@
   "name"            : "transit",
   "description"     : "Awesome content delivery.",
   "url"             : "https://kurbmedia.github.com/transit",
-  "keywords"        : ["cms", "client", "browser"],
+  "keywords"        : ["cms", "client", "browser", "content management", "transit"],
   "author"          : "kurb media, llc <dev@kurbmedia.com>",
   "contributors"    : ["Brent Kirby"],
   "dependencies"    : {
