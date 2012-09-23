@@ -5,7 +5,6 @@
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
     <title>Transit: Backend agnostic content management with Backbone.js</title>
     <link rel="stylesheet" href="stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
     <!--[if lt IE 9]>
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
@@ -42,53 +41,58 @@
             <p>Contexts can be any type of structured content. Examples could be headings (h1-h6), general text blocks (paragraphs/lists/basic 
             formatting), audio files, videos, image galleries... or any other content which can be described in HTML. Each deliverable has 
             a <code>has_many</code> relationship to a collection of contexts, which can be organized and arranged in any particular 
-            order. As an example, consider a <code>Post</code> deliverable, which contains some content and a video:</p>
+            order.</p>
+            
+            <p>As an example, consider a <code>Post</code> deliverable, containing content and a video:</p>
 
-            <div class="highlight">
-<pre>
-<span class="nt">&lt;article</span> <span class="na">id=</span><span class="s">"post"</span><span class="nt">&gt;</span>
-    <span class="nt">&lt;h2&gt;</span>The Post Title<span class="nt">&lt;/h2&gt;</span>
-    <span class="nt">&lt;div</span> <span class="na">data-context-id=</span><span class="s">"xxx"</span> <span class="na">class=</span><span class="s">"content"</span><span class="nt">&gt;</span>
-    <span class="nt">&lt;p&gt;</span>Lorem ipsum dolor sit amet, consectetur adipisicing elit....<span class="nt">&lt;/p&gt;</span>
-    <span class="nt">&lt;/div&gt;</span>
-    <span class="nt">&lt;h3</span> <span class="na">data-context-id=</span><span class="s">"xxx"</span><span class="nt">&gt;</span>A Sub Heading<span class="nt">&lt;/h3&gt;</span>
-    <span class="nt">&lt;video</span> <span class="na">data-context-id=</span><span class="s">"xxx"</span> <span class="na">src=</span><span class="s">"some_random.mp4"</span> <span class="na">poster=</span><span class="s">"poster.jpg"</span> <span class="nt">/&gt;</span>
-<span class="nt">&lt;/article&gt;</span>
+<pre class="prettyprint lang-html">
+&lt;article id=&quot;post&quot;&gt;
+    &lt;h2&gt;The Post Title&lt;/h2&gt;
+    &lt;div data-context-id=&quot;xxx&quot; class=&quot;content&quot;&gt;
+    &lt;p&gt;Lorem ipsum dolor sit amet, consectetur adipisicing elit....&lt;/p&gt;
+    &lt;/div&gt;
+    &lt;h3 data-context-id=&quot;xxx&quot;&gt;A Sub Heading&lt;/h3&gt;
+    &lt;video data-context-id=&quot;xxx&quot; src=&quot;some_random.mp4&quot; poster=&quot;poster.jpg&quot; /&gt;
+&lt;/article&gt;
 </pre>
-            </div>
 
-            <p>In the example above, the Post's contexts would consist of the body copy (div.content), the sub-heading (h3), and a video. Items like the post title (h2) 
-            would be described within the Post itself. A JSON representation of the Post "Deliverable" would be as follows:</p>
+            <p>In the example above, the Post's contexts would consist of:</p> 
+            <ol>
+                <li>the body copy (div.content), </li>
+                <li>the sub-heading (h3), </li>
+                <li>a video. </li>
+            </ol>
+            <p>Items like the post title (h2) would be described within the Post itself. A JSON representation of the Post "Deliverable" would be as follows:</p></p>
 
             <div class="highlight">
-<pre>
-<span class="p">{</span>
-    <span class="nt">"id"</span> <span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-    <span class="nt">"_type"</span> <span class="p">:</span> <span class="s2">"Post"</span><span class="p">,</span>
-    <span class="nt">"title"</span> <span class="p">:</span> <span class="s2">"The Post Title"</span><span class="p">,</span>
-    <span class="nt">"contexts"</span><span class="p">:[</span>
-    <span class="p">{</span>
-        <span class="nt">"id"</span> <span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-        <span class="nt">"_type"</span> <span class="p">:</span> <span class="s2">"TextBlock"</span><span class="p">,</span>
-        <span class="nt">"body"</span> <span class="p">:</span> <span class="s2">"Lorem ipsum dolor sit amet, consectetur adipisicing elit...."</span><span class="p">,</span>
-        <span class="nt">"position"</span><span class="p">:</span> <span class="mi">1</span>
-    <span class="p">},</span>
-    <span class="p">{</span>
-        <span class="nt">"id"</span> <span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
-        <span class="nt">"_type"</span> <span class="p">:</span> <span class="s2">"Heading"</span><span class="p">,</span>
-        <span class="nt">"body"</span> <span class="p">:</span> <span class="s2">"A Sub Heading"</span><span class="p">,</span>
-        <span class="nt">"node"</span> <span class="p">:</span> <span class="s2">"h3"</span><span class="p">,</span>
-        <span class="nt">"position"</span><span class="p">:</span> <span class="mi">2</span>
-    <span class="p">},</span>
-    <span class="p">{</span>
-        <span class="nt">"id"</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
-        <span class="nt">"_type"</span> <span class="p">:</span> <span class="s2">"Video"</span><span class="p">,</span>
-        <span class="nt">"source"</span> <span class="p">:</span> <span class="s2">"some_random.mp4"</span><span class="p">,</span>
-        <span class="nt">"poster"</span> <span class="p">:</span> <span class="s2">"poster.jpg"</span><span class="p">,</span>
-        <span class="nt">"position"</span><span class="p">:</span> <span class="mi">3</span>
-    <span class="p">}</span>
-    <span class="p">]</span>
-<span class="p">}</span>
+<pre class="prettyprint lang-json">
+    {
+        "id" : 1,
+        "_type" : "Post",
+        "title" : "The Post Title",
+        "contexts":[
+        {
+            "id" : 1,
+            "_type" : "TextBlock",
+            "body" : "Lorem ipsum dolor sit amet, consectetur adipisicing elit....",
+            "position": 1
+        },
+        {
+            "id" : 2,
+            "_type" : "Heading",
+            "body" : "A Sub Heading",
+            "node" : "h3",
+            "position": 2
+        },
+        {
+            "id": 3,
+            "_type" : "Video",
+            "source" : "some_random.mp4",
+            "poster" : "poster.jpg",
+            "position": 3
+        }
+        ]
+    }
 </pre>
             </div>
 
@@ -111,6 +115,9 @@
             </p>
         </footer>
     </div>
-    <script src="javascripts/scale.fix.js"></script>
+    <script src="javascripts/prettify.js"></script>
+    <script src="javascripts/lang.js"></script>
+    <script src="javascripts/site.js"></script>
+    
   </body>
 </html>
