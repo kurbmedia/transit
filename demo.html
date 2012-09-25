@@ -37,6 +37,10 @@
             <h1>Try It</h1>
             <p>The default interface uses <a href="http://twitter.github.com/bootstrap" target="_blank">Bootstrap</a> for the style and layout,
             but can easily be overridden via templates and css.</p>
+            <p>The area below is managed by a "Page" deliverable. Check the source for more info.</p>
+            
+            <div id="region" class="managed-deliverable" data-deliverable-type="Page" data-deliverable-id="1234">
+            </div>
             
             <p>
                 This demo is a work in progress... If you really want to try it...
@@ -71,25 +75,43 @@
     <script src="javascripts/handlebars-1.0.rc.1.js" type="text/javascript" charset="utf-8"></script>
     <script src="javascripts/transit.js" type="text/javascript"></script>
     <script src="javascripts/transit-bootstrap.js" type="text/javascript"></script>
+    <script src="javascripts/extras/page.js" type="text/javascript"></script>
+    <script src="javascripts/extras/heading_text.js" type="text/javascript"></script>
+    <script src="javascripts/extras/text_block.js" type="text/javascript"></script>
     <script type="text/javascript" charset="utf-8">
     //<![CDATA[
         $(window).one('load', function(){
-            var Page, panel, content, assets, tester;
+            var page, panel, content, assets, tester;
             
             $('html').addClass('transit-ui-active');
             
             var template;
             Transit.start();
-            Page = new Transit.Deliverable();
-            Page.type = "Page";
-            manager = Transit.manage(Page);
-            panel   = new Transit.Panel({title: 'Info'});
+            page = new Page({
+                id: 1234,
+                contexts: [
+                    {'_type': 'HeadingText', 'id':1, 'position':1, 'body' : "Main heading", 'node' : 'h3' },
+                    {'_type': 'TextBlock', 'position': 2, 'id':2, 'body' : "<p>This is some body copy, it is represented by paragraphs and basic text formatting.</p>" }
+                ]
+            });
+            page.view = new Transit.Region({el: '#region', model: page });
+            page.url  = "/";
+            manager = Transit.manage(page);
+            panel   = new Transit.Form({ model: page, title: 'Info', template: '#page_form_template' });
             content = new Transit.Panel({ title: 'Content' });
             assets  = new Transit.AssetManager();
             manager.add(panel, content, assets);
-            window.Page = Page;
+            window.page   = page;
             window.manage = manager;
             tester = new Transit.Panel({ title: 'New Panel' });
+            
+            manager.on('before:save', function(){
+               Transit.modal({
+                   title: "Save Data",
+                   content: "<pre class='prettyprint lang-json'>"+ JSON.stringify(page.toJSON(), null, 4).replace("<p>", "&lt;p&gt;").replace("</p>", "&lt;/p&gt;") +"</pre>"
+               });
+               prettyPrint();
+            });
 
             $('#link_tester').on('click', function(event){
                 event.preventDefault();
@@ -126,6 +148,23 @@
     <script type="text/plain" id="modal_test_content" charset="utf-8">
     This is the content within the modal window. It can be text, html etc. Buttons are added via a buttons option and trigger 
     application-wide events that you can listen to and handle.
+    </script>
+    
+    <script type="text/plain" id="page_form_template" charset="utf-8">
+    <ul class="fields">
+        <li>
+            <label>Title</label>
+            <input type="text" data-binding="title" name="title" value="{{title}}" />
+        </li>
+        <li>
+            <label>Description</label>
+            <input type="text" data-binding="description" name="description" value="{{description}}" />
+        </li>
+        <li>
+            <label>Keywords</label>
+            <input type="text" data-binding="keywords" name="title" value="{{keywords}}" />
+        </li>
+    </ul>
     </script>
   </body>
 </html>
