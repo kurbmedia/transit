@@ -19,6 +19,7 @@ CoffeeScript     = require 'coffee-script'
 cleanCSS         = require 'clean-css'
 less             = require 'less'
 async            = require 'async'
+wrench           = require 'wrench'
 
 # Javascript sources
 # Example configuration for two JS packages,
@@ -30,7 +31,10 @@ libraries = [
   'src/core.coffee'
   'src/core/browser.coffee'
   'src/core/selection.coffee'
-
+  'src/core/validate.coffee'
+  
+  'src/views/view.coffee'
+  
   'src/ui/manager.coffee'
   'src/ui/modal.coffee'
   'src/ui/notify.coffee'
@@ -43,10 +47,12 @@ libraries = [
   'src/model/context.coffee'
   'src/model/contexts.coffee'
   'src/model/deliverable.coffee'
-    
+  
   'src/views/asset_manager.coffee'
-  'src/views/view.coffee'
+  'src/views/context.coffee'
   'src/views/region.coffee'
+  'src/views/form.coffee'
+  
 ]
 
 javascripts = []
@@ -61,12 +67,23 @@ javascripts.push
   minify: false
 
 javascripts.push
+  path: 'gh-pages/javascripts/transit.js'
+  files: libraries
+  minify: false
+
+javascripts.push
   path:  'build/themes/bootstrap.js'
   files: ['src/themes/bootstrap.coffee']
   minify: true
 
 javascripts.push
   path:  'lib/themes/bootstrap.js'
+  files: ['src/themes/bootstrap.coffee']
+  minify: true
+
+
+javascripts.push
+  path:  'gh-pages/javascripts/transit-bootstrap.js'
   files: ['src/themes/bootstrap.coffee']
   minify: true
 # 
@@ -93,6 +110,10 @@ stylesheets = {
   'build/transit.css': [
     'src/css/transit.scss'
   ]
+  # ,
+  #   'gh-pages/stylesheets/transit.css': [
+  #     'src/css/transit.scss'
+  #   ]
 }
 
 task 'test', 'Run mocha suite', -> 
@@ -124,9 +145,20 @@ test = ->
 
 
 # Build JS
-task 'build:js', 'Build JS from source', build = (cb) ->
+task 'build', 'Build JS from source', build = (cb) ->
   file_name = null
   file_contents = null
+  try
+    files = wrench.readdirSyncRecursive('src/extras/')
+    for extra in files
+      file_name = path.join('src', 'extras', extra)
+      file_contents = CoffeeScript.compile "#{fs.readFileSync(file_name)}"
+      fname = path.basename(file_name).replace(/\.coffee$/,'.js')
+      write_js "build/extras/#{fname}", file_contents
+      write_js "gh-pages/javascripts/extras/#{fname}", file_contents
+  catch e
+    print_error e, file_name, file_contents
+
   getdata = (files)->
     code = ""
     for source in files
@@ -154,28 +186,6 @@ task 'build:js', 'Build JS from source', build = (cb) ->
     print_error e, file_name, file_contents
 
 
-# Build CSS
-task 'build:css', 'Build CSS', build = (cb) ->
-  file_name = null; file_contents = null
-  try
-    for stylesheet, sources of stylesheets
-      code = ''
-      for source in sources
-        file_name = source
-        file_contents = "#{fs.readFileSync source}"
-
-        code += file_contents
-
-      write_stylesheet stylesheet, code
-      unless process.env.MINIFY is 'false'
-        write_stylesheet stylesheet.replace(/\.css$/,'.min.css'), (
-          cleanCSS.process code
-        )    
-    cb() if typeof cb is 'function'
-  catch e
-    print_error e, file_name, file_contents
-
-
 # Watch task
 task 'watch', 'Watch source files and build JS & CSS', ->
   console.log "Watching for changes..."
@@ -187,8 +197,15 @@ task 'watch', 'Watch source files and build JS & CSS', ->
         fs.watchFile file, { interval: 100}, (curr, prev) ->
           if +curr.mtime isnt +prev.mtime
             console.log "Saw change in #{file}"
-            invoke 'build:js'
+            invoke 'build'
       )(file)
+  
+  
+  for file in wrench.readdirSyncRecursive('src/extras/')
+    file = path.join('src', 'extras', file)
+    fs.watchFile file, { interval: 100 }, (curr, prev) ->
+      if +curr.mtime isnt +prev.mtime
+        invoke "build"
 
   fs.watchFile 'src/css/transit.scss', { interval: 100 }, (curr, prev)->
     console.log "Compile transit.scss"
@@ -207,6 +224,15 @@ write_js = (filename, body) ->
 """
   console.log "Wrote #{filename}"
 
+get_libs = (dir, callback)->
+  files = []
+  wrench.readdirSyncRecursive dir, (path)->
+    unless path is null
+      fs.stat path, (err, stat)->
+        if stat and !stat.isDirectory()
+          files.push(path)
+  callback?(files)
+  files
 
 # Write stylesheet with a header
 write_stylesheet = (filename, body) ->

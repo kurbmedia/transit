@@ -1,13 +1,15 @@
-$ = window.$ || Backbone.$
+Transit  = @Transit or require('transit')
+Backbone = @Backbone or require('backbone')
+_ = @_ or require('underscore')
 
-class Deliverable extends Backbone.Model
+class Transit.Deliverable extends Backbone.Model
   contexts: null
   type: null
   view: null
   initialize:()-> 
     @type = @constructor.name if @type is null
-    @view ||= new Transit.Region(@_view_options)
     @contexts ||= new Transit.Contexts()
+    @view ||= new Transit.Region(@_view_options())
     @on('change:contexts', @_build_contexts)
     @_build_contexts()
     @
@@ -33,19 +35,16 @@ class Deliverable extends Backbone.Model
   _build_contexts:()=>
     contexts  = @attributes.contexts || []
     @contexts.reset(contexts)
-    delete @attributes['contexts']
+    @unset('contexts', silent: true)
     @
   
   # Options for constructing the view
   _view_options:()=>
     options = 
       model: @
-    options.el = "[data-region-id='\#\{@id\}']" if @isNew()
+    options.el = "[data-deliverable-id='#{@id}']" unless @isNew()
     options
   
 
-##
-# Expose object
-#
-Transit.Deliverable = Deliverable
+
 module?.exports = Transit.Deliverable

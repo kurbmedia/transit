@@ -1,3 +1,6 @@
+Transit = @Transit or require('transit')
+Backbone = @Backbone or require('backbone')
+
 # Support detection
 XHRUploadSupport = ()->
   if XMLHttpRequest is undefined then return false
@@ -11,7 +14,10 @@ fileApiSupport = ()->
   input['files'] isnt undefined
 
 
-class @Transit.Uploader extends Backbone.View
+class Transit.Uploader extends Backbone.Marionette.ItemView
   tagName: 'div'
   className: 'transit-uploader'
   @native: XHRUploadSupport()
+
+
+module?.exports = Transit.Uploader

@@ -747,5 +747,3 @@ html.transit-ui-hidden { margin-right: 0; }
 #transit_ui div.transit-toolbar div.navbar { margin-bottom: 0; border-radius: 0; }
 #transit_ui div.transit-toolbar div.navbar-inner { border-radius: 0; }
 #transit_ui div.transit-toolbar div.panels { margin: 0 0 1em 0; padding: 2em 5px 1em 5px; background: white; min-height: 150px; }
-#transit_ui div.transit-toolbar div.transit-panel { display: none; }
-#transit_ui div.transit-toolbar div.transit-panel.active { display: block; }

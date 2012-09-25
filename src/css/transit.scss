@@ -71,8 +71,5 @@ html.transit-ui-hidden{ margin-right:0; }
     div.navbar{ margin-bottom:0; border-radius:0; }
     div.navbar-inner{ border-radius:0; }
     div.panels{ margin:0 0 1em 0; padding:2em 5px 1em 5px; background:white; min-height:150px; }
-    div.transit-panel{ display:none; 
-      &.active{ display:block; }
-    }
   }
 }

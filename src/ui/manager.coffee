@@ -1,4 +1,6 @@
-Transit = @Transit or require 'transit'
+Transit  = @Transit or require('transit')
+Backbone = @Backbone or require('backbone')
+_ = @_ or require('underscore')
 
 class Transit.Manager extends Backbone.Marionette.ItemView
   className: 'transit-manager'
@@ -16,7 +18,13 @@ class Transit.Manager extends Backbone.Marionette.ItemView
 
   initialize: -> @render()
   
-  add:(panels...)-> @toolBar.add(panels...)
+  add:(panels...)-> 
+    model  = @model
+    panels = _.map panels, (panel)-> 
+      panel.model ||= model
+      panel
+
+    @toolBar.add(panels...)
   
   onRender:()=>    
     @toolBar = new Transit.Toolbar()
@@ -26,7 +34,11 @@ class Transit.Manager extends Backbone.Marionette.ItemView
   
   drop:(panels...)-> @toolBar.drop(panels...)
   
-  save:()-> @model.save()
+  save:()-> 
+    @trigger("before:save")
+    @model.save()
+    @trigger("after:save")
+    @
   
   reset:()-> @toolBar.reset()
 

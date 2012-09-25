@@ -227,13 +227,50 @@
 
 }).call(this);
 (function() {
-  var Transit,
+
+
+
+}).call(this);
+(function() {
+  var Backbone, Transit,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  Backbone = this.Backbone || require('backbone');
+
+  Transit = this.Transit || require('transit');
+
+  Transit.View = (function(_super) {
+
+    __extends(View, _super);
+
+    function View() {
+      return View.__super__.constructor.apply(this, arguments);
+    }
+
+    View.prototype.tagName = 'div';
+
+    return View;
+
+  })(Backbone.Marionette.ItemView);
+
+  if (typeof module !== "undefined" && module !== null) {
+    module.exports = Transit.View;
+  }
+
+}).call(this);
+(function() {
+  var Backbone, Transit, _,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     __slice = [].slice;
 
   Transit = this.Transit || require('transit');
+
+  Backbone = this.Backbone || require('backbone');
+
+  _ = this._ || require('underscore');
 
   Transit.Manager = (function(_super) {
 
@@ -271,8 +308,13 @@
     };
 
     Manager.prototype.add = function() {
-      var panels, _ref;
+      var model, panels, _ref;
       panels = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      model = this.model;
+      panels = _.map(panels, function(panel) {
+        panel.model || (panel.model = model);
+        return panel;
+      });
       return (_ref = this.toolBar).add.apply(_ref, panels);
     };
 
@@ -292,7 +334,10 @@
     };
 
     Manager.prototype.save = function() {
-      return this.model.save();
+      this.trigger("before:save");
+      this.model.save();
+      this.trigger("after:save");
+      return this;
     };
 
     Manager.prototype.reset = function() {
@@ -309,11 +354,18 @@
 
 }).call(this);
 (function() {
-  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+  var Backbone, Transit, _,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  this.Transit.Modal = (function(_super) {
+  Transit = this.Transit || require('transit');
+
+  Backbone = this.Backbone || require('backbone');
+
+  _ = this._ || require('underscore');
+
+  Transit.Modal = (function(_super) {
 
     __extends(Modal, _super);
 
@@ -398,7 +450,7 @@
 
   })(Backbone.View);
 
-  this.Transit.modal = function(options) {
+  Transit.modal = function(options) {
     var view;
     if (options == null) {
       options = {};
@@ -412,6 +464,14 @@
     view.render();
     return view;
   };
+
+  if (typeof exports !== "undefined" && exports !== null) {
+    exports.modal = Transit.modal;
+  }
+
+  if (typeof module !== "undefined" && module !== null) {
+    module.exports = Transit.Modal;
+  }
 
 }).call(this);
 (function() {
@@ -493,10 +553,14 @@
 
     Panel.prototype.active = false;
 
+    Panel.prototype.template = function() {
+      return '';
+    };
+
     function Panel() {
       var prop, _i, _len, _ref;
       Panel.__super__.constructor.apply(this, arguments);
-      _ref = ['title', 'icon'];
+      _ref = ['title', 'icon', 'template'];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         prop = _ref[_i];
         if (this.options[prop] !== void 0) {
@@ -506,13 +570,12 @@
       if (this.$el.attr('id') === void 0) {
         this.$el.attr("id", "transit_panel_" + this.cid);
       }
+      this.$el.attr('rel', this.cid);
     }
 
     return Panel;
 
-  })(Backbone.Marionette.ItemView);
-
-  this.Transit.Panel = Transit.Panel;
+  })(Transit.View);
 
   if (typeof module !== "undefined" && module !== null) {
     module.exports = Transit.Panel;
@@ -520,10 +583,10 @@
 
 }).call(this);
 (function() {
-  var Tab, Transit,
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+  var Tab, TabbedRegion, Transit,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __slice = [].slice;
 
   Transit = this.Transit || require('transit');
@@ -535,6 +598,51 @@
   functionality of the manager.
   */
 
+
+  TabbedRegion = (function(_super) {
+
+    __extends(TabbedRegion, _super);
+
+    function TabbedRegion() {
+      return TabbedRegion.__super__.constructor.apply(this, arguments);
+    }
+
+    TabbedRegion.prototype.views = {};
+
+    TabbedRegion.prototype.show = function(view) {
+      this.ensureEl();
+      if (this.currentView) {
+        this.currentView.$el.hide();
+      }
+      view.render();
+      if ($(".transit-panel[rel='" + view.cid + "']", this.$el).length === 0) {
+        this.$el.append(view.$el);
+      }
+      view.$el.show();
+      if (view.onShow) {
+        view.onShow();
+      }
+      view.trigger("show");
+      this.trigger("view:show", view);
+      return this;
+    };
+
+    TabbedRegion.prototype.attachView = function(view) {
+      var mine;
+      TabbedRegion.__super__.attachView.apply(this, arguments);
+      if (!this.views[view.cid]) {
+        this.views[view.cid] = view;
+        mine = this;
+        return view.on('close', function() {
+          view.off();
+          return delete mine.views[this.cid];
+        });
+      }
+    };
+
+    return TabbedRegion;
+
+  })(Backbone.Marionette.Region);
 
   Transit.Toolbar = (function(_super) {
 
@@ -554,6 +662,8 @@
     Toolbar.prototype.className = 'transit-toolbar';
 
     Toolbar.prototype.navbar = null;
+
+    Toolbar.prototype.regionType = TabbedRegion;
 
     Toolbar.prototype.regions = {
       panels: 'div.panels:eq(0)'
@@ -697,9 +807,13 @@
 
 }).call(this);
 (function() {
-  var XHRUploadSupport, fileApiSupport,
+  var Backbone, Transit, XHRUploadSupport, fileApiSupport,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  Transit = this.Transit || require('transit');
+
+  Backbone = this.Backbone || require('backbone');
 
   XHRUploadSupport = function() {
     var xhr;
@@ -720,7 +834,7 @@
     return input['files'] !== void 0;
   };
 
-  this.Transit.Uploader = (function(_super) {
+  Transit.Uploader = (function(_super) {
 
     __extends(Uploader, _super);
 
@@ -736,14 +850,23 @@
 
     return Uploader;
 
-  })(Backbone.View);
+  })(Backbone.Marionette.ItemView);
+
+  if (typeof module !== "undefined" && module !== null) {
+    module.exports = Transit.Uploader;
+  }
 
 }).call(this);
 (function() {
-  var __hasProp = {}.hasOwnProperty,
+  var Backbone, Transit,
+    __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  this.Transit.Asset = (function(_super) {
+  Transit = this.Transit || require('transit');
+
+  Backbone = this.Backbone || require('backbone');
+
+  Transit.Asset = (function(_super) {
 
     __extends(Asset, _super);
 
@@ -752,28 +875,66 @@
     }
 
     Asset.prototype.defaults = {
-      deliverable_id: null,
-      deliverable_type: null,
       urls: [],
       url: null,
-      image: true,
       filename: null
-    };
-
-    Asset.prototype.isImage = function() {
-      return this.get('image');
     };
 
     return Asset;
 
   })(Backbone.Model);
 
+  Transit.Asset.Image = (function(_super) {
+
+    __extends(Image, _super);
+
+    function Image() {
+      return Image.__super__.constructor.apply(this, arguments);
+    }
+
+    Image.prototype.image = true;
+
+    Image.prototype.defaults = {
+      _type: 'image'
+    };
+
+    return Image;
+
+  })(Transit.Asset);
+
+  Transit.Asset.File = (function(_super) {
+
+    __extends(File, _super);
+
+    function File() {
+      return File.__super__.constructor.apply(this, arguments);
+    }
+
+    File.prototype.image = false;
+
+    File.prototype.defaults = {
+      _type: 'file'
+    };
+
+    return File;
+
+  })(Transit.Asset);
+
+  if (typeof module !== "undefined" && module !== null) {
+    module.exports = Transit.Asset;
+  }
+
 }).call(this);
 (function() {
-  var __hasProp = {}.hasOwnProperty,
+  var Backbone, Transit,
+    __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  this.Transit.Assets = (function(_super) {
+  Transit = this.Transit || require('transit');
+
+  Backbone = this.Backbone || require('backbone');
+
+  Transit.Assets = (function(_super) {
 
     __extends(Assets, _super);
 
@@ -781,25 +942,24 @@
       return Assets.__super__.constructor.apply(this, arguments);
     }
 
-    Assets.prototype.model = function() {
-      return Transit.Asset;
+    Assets.prototype.model = function(data) {
+      var klass;
+      klass = data['_type'] === 'image' ? Transit.Asset.Image : Transit.Asset.File;
+      delete data['_type'];
+      return new klass(data);
     };
 
     Assets.prototype.url = function() {
       return Transit.settings.asset_path;
     };
 
-    Assets.prototype.fetch = function(options) {
-      if (options == null) {
-        options = {};
-      }
-      options.data = this.deliverable;
-      return Backbone.Collection.prototype.fetch.apply(this, [options]);
-    };
-
     return Assets;
 
   })(Backbone.Collection);
+
+  if (typeof module !== "undefined" && module !== null) {
+    module.exports = Transit.Assets;
+  }
 
 }).call(this);
 (function() {
@@ -911,7 +1071,7 @@
     Contexts.load = function(name) {
       return Contexts.subclasses[name] || {
         model: Transit.Context,
-        view: Transit.View
+        view: Transit.ContextView
       };
     };
 
@@ -923,7 +1083,7 @@
       model = store.model || Transit.Context;
       store = _.defaults(store, {
         model: model,
-        view: model.view || Transit.View
+        view: model.prototype.view || Transit.ContextView
       });
       current = Contexts.subclasses[name] || {};
       Contexts.subclasses[name] = _.extend(current, store);
@@ -931,6 +1091,10 @@
     };
 
     Contexts.prototype._deliverable = null;
+
+    Contexts.prototype.comparator = function(model) {
+      return parseInt(model.get('position'));
+    };
 
     Contexts.prototype.model = function(data) {
       var klass;
@@ -948,14 +1112,18 @@
 
 }).call(this);
 (function() {
-  var $, Deliverable,
+  var Backbone, Transit, _,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  $ = window.$ || Backbone.$;
+  Transit = this.Transit || require('transit');
 
-  Deliverable = (function(_super) {
+  Backbone = this.Backbone || require('backbone');
+
+  _ = this._ || require('underscore');
+
+  Transit.Deliverable = (function(_super) {
 
     __extends(Deliverable, _super);
 
@@ -978,8 +1146,8 @@
       if (this.type === null) {
         this.type = this.constructor.name;
       }
-      this.view || (this.view = new Transit.Region(this._view_options));
       this.contexts || (this.contexts = new Transit.Contexts());
+      this.view || (this.view = new Transit.Region(this._view_options()));
       this.on('change:contexts', this._build_contexts);
       this._build_contexts();
       return this;
@@ -1018,7 +1186,9 @@
       var contexts;
       contexts = this.attributes.contexts || [];
       this.contexts.reset(contexts);
-      delete this.attributes['contexts'];
+      this.unset('contexts', {
+        silent: true
+      });
       return this;
     };
 
@@ -1027,8 +1197,8 @@
       options = {
         model: this
       };
-      if (this.isNew()) {
-        options.el = "[data-region-id='\#\{@id\}']";
+      if (!this.isNew()) {
+        options.el = "[data-deliverable-id='" + this.id + "']";
       }
       return options;
     };
@@ -1037,165 +1207,45 @@
 
   })(Backbone.Model);
 
-  Transit.Deliverable = Deliverable;
-
   if (typeof module !== "undefined" && module !== null) {
     module.exports = Transit.Deliverable;
   }
 
 }).call(this);
 (function() {
-  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+  var Transit,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  this.Transit.AssetManager = (function(_super) {
+  Transit = this.Transit || require('transit');
+
+  Transit.AssetManager = (function(_super) {
 
     __extends(AssetManager, _super);
 
     function AssetManager() {
-      this.render = __bind(this.render, this);
-
-      this.add = __bind(this.add, this);
       return AssetManager.__super__.constructor.apply(this, arguments);
     }
 
-    AssetManager.prototype.uploader = null;
-
-    AssetManager.prototype.collection = null;
-
-    AssetManager.prototype.images = null;
-
-    AssetManager.prototype.files = null;
-
     AssetManager.prototype.title = 'Assets';
 
-    AssetManager.prototype.attach = function(model) {
-      this.model = model;
-      if (this.model.assets === void 0) {
-        return this.model.assets = new Transit.Assets();
-      }
-    };
+    AssetManager.prototype.className = 'transit-panel transit-asset-manager';
 
-    AssetManager.prototype.add = function(asset) {
-      if (asset.isImage()) {
-        return this.images.add(asset);
-      } else {
-        return this.files.add(asset);
-      }
-    };
-
-    AssetManager.prototype.render = function() {
-      AssetManager.__super__.render.apply(this, arguments);
-      this.$el.addClass('transit-asset-manager');
-      if (this.uploader === null) {
-        this.uploader = new Transit.Uploader();
-        this.$el.prepend(this.uploader.render().$el);
-      }
-      if (this.files === null) {
-        this.files = new Transit.AssetManager.List({
-          "class": 'files'
-        });
-      }
-      if (this.images === null) {
-        this.images = new Transit.AssetManager.List({
-          "class": 'images'
-        });
-      }
-      this.$el.append(this.images.render().$el);
-      this.$el.append(this.files.render().$el);
-      return this;
+    AssetManager.prototype.initialize = function() {
+      return this.render();
     };
 
     return AssetManager;
 
   })(Transit.Panel);
 
-  this.Transit.AssetManager.List = (function(_super) {
-
-    __extends(List, _super);
-
-    function List() {
-      this.add = __bind(this.add, this);
-      return List.__super__.constructor.apply(this, arguments);
-    }
-
-    List.prototype.tagName = 'ul';
-
-    List.prototype.initialize = function() {
-      List.__super__.initialize.apply(this, arguments);
-      if (this.options['class']) {
-        return this.$el.addClass(this.options['class']);
-      }
-    };
-
-    List.prototype.add = function(asset) {
-      var item;
-      item = new Transit.AssetManager.Item({
-        model: asset
-      });
-      return this.$el.append(item.render.$el());
-    };
-
-    return List;
-
-  })(Backbone.View);
-
-  this.Transit.AssetManager.Item = (function(_super) {
-
-    __extends(Item, _super);
-
-    function Item() {
-      this.remove = __bind(this.remove, this);
-
-      this.render = __bind(this.render, this);
-      return Item.__super__.constructor.apply(this, arguments);
-    }
-
-    Item.prototype.events = {
-      'click a[data-action="remove"]': 'remove'
-    };
-
-    Item.prototype.tagName = 'li';
-
-    Item.prototype.type = null;
-
-    Item.prototype.template = null;
-
-    Item.prototype.initialize = function() {
-      var _this = this;
-      this.type = this.model.isImage() ? 'image' : 'file';
-      this.$el.addClass(this.type);
-      return Transit.tpl("/core/assets/" + this.type + ".jst", function(templ) {
-        _this.template = templ;
-        return _this.render();
-      });
-    };
-
-    Item.prototype.render = function() {
-      return this.$el.html(this.template({
-        asset: this.model
-      }));
-    };
-
-    Item.prototype.remove = function() {
-      if (confirm("Are you sure you want to delete this " + this.type + "?")) {
-        this.model.destroy();
-        Transit.trigger('asset:removed', this.model);
-        return Item.__super__.remove.apply(this, arguments);
-      } else {
-        return false;
-      }
-    };
-
-    return Item;
-
-  })(Backbone.View);
+  if (typeof module !== "undefined" && module !== null) {
+    module.exports = Transit.AssetManager;
+  }
 
 }).call(this);
 (function() {
   var Backbone, Transit,
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -1203,30 +1253,33 @@
 
   Transit = this.Transit || require('transit');
 
-  Transit.View = (function(_super) {
+  Transit.ContextView = (function(_super) {
 
-    __extends(View, _super);
+    __extends(ContextView, _super);
 
-    function View() {
-      this.render = __bind(this.render, this);
-      return View.__super__.constructor.apply(this, arguments);
+    function ContextView() {
+      return ContextView.__super__.constructor.apply(this, arguments);
     }
 
-    View.prototype.tagName = 'div';
+    ContextView.prototype.tagName = 'div';
 
-    View.prototype.className = 'context';
+    ContextView.prototype.className = 'context';
 
-    View.prototype.render = function() {
+    ContextView.prototype.template = function() {
+      return 'item!';
+    };
+
+    ContextView.prototype.onRender = function() {
       this.$el.attr('data-context-id', this.model.id).attr('data-context-type', this.model.type);
       return this;
     };
 
-    return View;
+    return ContextView;
 
-  })(Backbone.Marionette.ItemView);
+  })(Transit.View);
 
   if (typeof module !== "undefined" && module !== null) {
-    module.exports = Transit.View;
+    module.exports = Transit.ContextView;
   }
 
 }).call(this);
@@ -1251,16 +1304,141 @@
 
     Region.prototype.className = 'region';
 
+    Region.prototype.initialize = function() {
+      return this.collection = this.model.contexts;
+    };
+
+    Region.prototype.buildItemView = function(model) {
+      return this.getItemView(model);
+    };
+
+    Region.prototype.getItemView = function(model) {
+      return model.view;
+    };
+
     Region.prototype.onRender = function() {
       return this.$el.attr('data-deliverable-id', this.model.id).attr('data-deliverable-type', this.model.type);
     };
 
     return Region;
 
-  })(Backbone.Marionette.ItemView);
+  })(Backbone.Marionette.CollectionView);
 
   if (typeof module !== "undefined" && module !== null) {
     module.exports = Transit.Region;
+  }
+
+}).call(this);
+(function() {
+  var Backbone, Transit, _,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  Transit = this.Transit || require('transit');
+
+  Backbone = this.Backbone || require('backbone');
+
+  _ = this._ || require('underscore');
+
+  Transit.Form = (function(_super) {
+
+    __extends(Form, _super);
+
+    function Form() {
+      return Form.__super__.constructor.apply(this, arguments);
+    }
+
+    Form.prototype.className = 'transit-form transit-panel';
+
+    Form.prototype.events = {
+      'change input[data-binding]': 'update',
+      'blur input[data-binding]': 'update'
+    };
+
+    Form.prototype.initialize = function() {
+      return this.bindTo(this, 'item:rendered', this.setup);
+    };
+
+    Form.prototype.setup = function() {
+      var _this = this;
+      this.bindTo(this.model, 'change', this.render);
+      return this.$('input, textarea').each(function(i, node) {
+        var view;
+        view = new Transit.Form.Field({
+          el: $(node),
+          model: _this.model
+        });
+        return _this.on('close', (function() {
+          return view.close();
+        }));
+      });
+    };
+
+    Form.prototype.update = function(event) {
+      var field, opts, value;
+      if (event && event.currentTarget) {
+        field = $(event.currentTarget);
+        value = field.val();
+        opts = event.type === 'blur' ? {
+          silent: true
+        } : {};
+        this.model.set(field.data('binding'), value, opts);
+        return this;
+      }
+    };
+
+    return Form;
+
+  })(Transit.Panel);
+
+  Transit.Form.Field = (function(_super) {
+
+    __extends(Field, _super);
+
+    function Field() {
+      return Field.__super__.constructor.apply(this, arguments);
+    }
+
+    Field.prototype.events = {
+      'change': 'validate'
+    };
+
+    Field.prototype.binding = null;
+
+    Field.prototype.initialize = function() {
+      var attr;
+      attr = this.$el.data('binding');
+      if (attr !== void 0) {
+        this.binding = attr;
+        this.bindTo(this.model, "change:" + this.binding, this.update);
+      }
+      return this.update();
+    };
+
+    Field.prototype.validate = function(event) {
+      if (this.$el.is(':checkbox') || this.$el.is(":radio")) {
+        return this;
+      }
+    };
+
+    Field.prototype.update = function() {
+      if (this.$el.is(":checkbox")) {
+        if (this.model.get(this.binding)) {
+          return this.$el.attr('checked', 'checked');
+        }
+      } else if (this.$el.is(":radio") && this.model.get(this.binding) === this.$el.attr('value')) {
+        return this.$el.click();
+      } else {
+        return this.$el.val(this.model.get(this.binding));
+      }
+    };
+
+    return Field;
+
+  })(Backbone.Marionette.ItemView);
+
+  if (typeof module !== "undefined" && module !== null) {
+    module.exports = Transit.Form;
   }
 
 }).call(this);

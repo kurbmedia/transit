@@ -8,10 +8,37 @@ functionality of the manager.
 
 ###
 
+class TabbedRegion extends Backbone.Marionette.Region
+  views: {}
+  show: (view)->
+    @ensureEl()
+    if @currentView
+      @currentView.$el.hide()
+    view.render()
+    if $(".transit-panel[rel='#{view.cid}']", @$el).length is 0
+      @$el.append(view.$el)
+    view.$el.show()
+
+    if view.onShow then view.onShow()
+    view.trigger("show")
+    @trigger("view:show", view)
+    @
+    
+  attachView:(view)->
+    super
+    unless @views[view.cid]
+      @views[view.cid] = view
+      mine = @
+      view.on 'close', ()-> 
+        view.off()
+        delete mine.views[@cid]
+    
+
 class Transit.Toolbar extends Backbone.Marionette.Layout
   tagName: 'div'
   className: 'transit-toolbar'
   navbar: null
+  regionType: TabbedRegion
   regions:
     panels: 'div.panels:eq(0)'
   
@@ -92,8 +119,6 @@ class Tab extends Backbone.Marionette.ItemView
     @$el.append(link)
     @$el.attr('rel', @options.panel)
     @
-  
-
 
 @Transit.Toolbar = Transit.Toolbar
 module?.exports  = Transit.Toolbar

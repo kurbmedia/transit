@@ -54,6 +54,27 @@ Handlebars.registerPartial('transit_save_button', '
   <i class="icon-ok"></i> {{#if text}}{{text}}{{else}}Save{{/if}}
 </button>')
 
+Handlebars.registerPartial('transit_progress_bar', '
+<div class="progress progress-striped active">
+  <div class="bar" style="width:{{progress}}"></div>
+</div>
+')
+
+Transit.AssetManager::template = Handlebars.compile '
+<div class="add-asset">
+  <button class="btn btn-small btn-primary"><i class="icon-plus icon-white"></i> Upload</button>
+</div>
+'
+
+Transit.Uploader::template = Handlebars.compile '
+  <h4>Upload Files</h4>
+  <span class="ui-fileinput">
+    <input type="file" name="file" />
+    <var class="ui-value">Choose a file</var>
+    <button class="btn btn-mini btn-primary">Choose</button>
+  </span>
+'
+
 $.fn.modal.Constructor::removeBackdrop = ()->
   @$backdrop.remove()
   @$backdrop = null

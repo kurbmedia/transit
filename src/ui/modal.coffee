@@ -1,4 +1,8 @@
-class @Transit.Modal extends Backbone.View
+Transit  = @Transit or require('transit')
+Backbone = @Backbone or require('backbone')
+_ = @_ or require('underscore')
+
+class Transit.Modal extends Backbone.View
   handler: -> 
     @$el.modal(show: true)
       .one 'hidden', (event)=> 
@@ -52,9 +56,12 @@ class @Transit.Modal extends Backbone.View
     @
 
 
-@Transit.modal = (options = {}) ->
+Transit.modal = (options = {}) ->
   view = new Transit.Modal(options)
   Transit.one 'modal:show', (mod)->
     return false unless mod is view
   view.render()
   view
+
+exports?.modal  = Transit.modal
+module?.exports = Transit.Modal
