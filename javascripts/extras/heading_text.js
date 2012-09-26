@@ -42,10 +42,9 @@
 
   })(Transit.ContextView);
 
-  Transit.Contexts.setup('HeadingText', {
-    model: HeadingText,
-    view: HeadingView
-  });
+  HeadingText.prototype.view = HeadingView;
+
+  Transit.set('context', 'HeadingText', HeadingText);
 
   if (typeof module !== "undefined" && module !== null) {
     module.exports = HeadingText;

@@ -49,8 +49,30 @@
             
             <h3>Misc</h3>
             <ul id="testers">
-                <li><a class="modal" href="#">Open a modal window.</a></li>
-                <li><a class="panel" href="#">Add a new panel</a></li>
+                <li>
+                    Open a modal window. [<a class="modal" href="#">Run it.</a>]
+                    <pre class="prettyprint lang-javascript">Transit.modal({ title: "Title", content: "Content" });</pre>
+                    
+                </li>
+                <li>
+                    Add a new Panel [<a class="panel" href="#">Add it</a>]
+<pre class="prettyprint lang-javascript">
+var page    = new Transit.Deliverable(),
+    manager = Transit.manage(page),
+    panel   = new Transit.Panel({ title: 'New Panel' });
+
+manager.add(panel);
+</pre>
+                </li>
+                <li>
+                    Show a notification
+                    <pre class="prettyprint lang-javascript">Transit.notice(type, message);</pre>
+                    <ul id="notice_testers">
+                        <li><a class="success" href="#">Success message</a></li>
+                        <li><a class="notice" href="#">Notice message</a></li>
+                        <li><a class="error" href="#">Error message</a></li>
+                    </ul>
+                </li>
             </ul>
         </section>
         <footer>
@@ -71,7 +93,6 @@
     <script src="javascripts/bootstrap.js" type="text/javascript"></script>    
     <script src="javascripts/underscore-1.3.3.js" type="text/javascript"></script>
     <script src="javascripts/backbone-0.9.2.js" type="text/javascript"></script>
-    <script src="javascripts/backbone-marionette.js" type="text/javascript" charset="utf-8"></script>
     <script src="javascripts/handlebars-1.0.rc.1.js" type="text/javascript" charset="utf-8"></script>
     <script src="javascripts/transit.js" type="text/javascript"></script>
     <script src="javascripts/transit-bootstrap.js" type="text/javascript"></script>
@@ -81,12 +102,12 @@
     <script type="text/javascript" charset="utf-8">
     //<![CDATA[
         $(window).one('load', function(){
-            var page, panel, content, assets, tester;
+            var page, panel, content, assets, tester, manager;
             
             $('html').addClass('transit-ui-active');
             
             var template;
-            Transit.start();
+            
             page = new Page({
                 id: 1234,
                 contexts: [
@@ -96,22 +117,29 @@
             });
             page.view = new Transit.Region({el: '#region', model: page });
             page.url  = "/";
-            manager = Transit.manage(page);
-            panel   = new Transit.Form({ model: page, title: 'Info', template: '#page_form_template' });
-            content = new Transit.Panel({ title: 'Content' });
-            assets  = new Transit.AssetManager();
-            manager.add(panel, content, assets);
-            window.page   = page;
-            window.manage = manager;
-            tester = new Transit.Panel({ title: 'New Panel' });
             
-            manager.on('before:save', function(){
-               Transit.modal({
-                   title: "Save Data",
-                   content: "<pre class='prettyprint lang-json'>"+ JSON.stringify(page.toJSON(), null, 4).replace("<p>", "&lt;p&gt;").replace("</p>", "&lt;/p&gt;") +"</pre>"
-               });
-               prettyPrint();
+            Transit.on('ready', function(){
+                manager = Transit.manage(page);
+                //panel   = new Transit.Form({ model: page, title: 'Info', template: '#page_form_template' });
+                content = new Transit.Panel({ title: 'Content' });
+                assets  = new Transit.AssetManager();
+                manager.add(content, assets);
+                
+                window.page   = page;
+                window.manage = manager;
+                tester = new Transit.Panel({ title: 'New Panel' });
+                            
+                manager.on('before:save', function(){
+                   Transit.modal({
+                       title: "Save Data",
+                       content: "<pre class='prettyprint lang-json'>"+ JSON.stringify(page.toJSON(), null, 4).replace("<p>", "&lt;p&gt;").replace("</p>", "&lt;/p&gt;") +"</pre>"
+                   });
+                   prettyPrint();
+                });
             });
+            
+            Transit.init();
+            
 
             $('#link_tester').on('click', function(event){
                 event.preventDefault();
@@ -132,16 +160,24 @@
             $('#testers a.panel').toggle(
                 function(event){
                     event.preventDefault();
-                    $(this).text('Remove the panel');
+                    $(this).text('Remove it');
                     manager.add(tester);
                 },
                 
                 function(event){
                     event.preventDefault();
-                    $(this).text('Add a panel');
-                    manager.drop(tester);
+                    $(this).text('Add it');
+                    manager.release(tester);
                 }
-            )
+            );
+            
+            $("#notice_testers").on('click', '> li a', function(event){
+               event.preventDefault();
+               var link = $(this);
+               if( link.hasClass('success') ) Transit.notify('success', "This action was successful!");
+               else if( link.hasClass('error') ) Transit.notify('error', "This action was a massive fail!");
+               else if( link.hasClass('notice') ) Transit.notify('info', "This action wasn't really anything. It just is.");
+            });
         });
     //]]>
     </script>
