@@ -1,5 +1,6 @@
 {
   "name"            : "transit",
+  "version"         : "0.0.2",
   "description"     : "Awesome content delivery.",
   "url"             : "https://kurbmedia.github.com/transit",
   "keywords"        : ["cms", "client", "browser", "content management", "transit"],
@@ -27,6 +28,5 @@
     "url": "git://github.com/kurbmedia/transit.git"
   },
   
-  "main"     : "./lib/transit.js",
-  "version"  : "0.0.1"
+  "main"     : "./lib/transit.js"
 }
