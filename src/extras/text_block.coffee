@@ -8,9 +8,7 @@ class TextBlockView extends Transit.ContextView
   template: Handlebars.compile("{{{body}}}")
   
 
-Transit.Contexts.setup('TextBlock', {
-  model: TextBlock,
-  view: TextBlockView
-})
+TextBlock::view = TextBlockView
+Transit.set('context', 'TextBlock', TextBlock)
 
 module?.exports = TextBlock

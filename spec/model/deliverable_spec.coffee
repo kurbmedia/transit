@@ -23,11 +23,12 @@ describe 'Deliverable', ()->
     
   describe 'building contexts from attributes', ()->
     
-    beforeEach ()->
+    beforeEach (done)->
       item.set('contexts', [
         { name: 'first',  _type: 'Context' },
         { name: 'second', _type: 'Context' }
       ])
+      done()
     
     it 'converts the attributes to a collection', ()->
       expect(item.contexts.length)
@@ -36,14 +37,14 @@ describe 'Deliverable', ()->
     it 'removes the contexts attribute', ()->
       expect(item.get('contexts'))
         .to.not.exist
-      
+
     afterEach ()-> item.contexts = new Transit.Contexts()
     
   describe 'generating json', ()->
     
     json = []
     
-    beforeEach ()->
+    before ()->
       item.set('contexts', [
         { name: 'first',  _type: 'Context' },
         { name: 'second', _type: 'Context' }

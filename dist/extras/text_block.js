@@ -35,10 +35,9 @@
 
   })(Transit.ContextView);
 
-  Transit.Contexts.setup('TextBlock', {
-    model: TextBlock,
-    view: TextBlockView
-  });
+  TextBlock.prototype.view = TextBlockView;
+
+  Transit.set('context', 'TextBlock', TextBlock);
 
   if (typeof module !== "undefined" && module !== null) {
     module.exports = TextBlock;

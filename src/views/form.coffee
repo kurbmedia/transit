@@ -24,7 +24,7 @@ class Transit.Form extends Transit.Panel
       @model.set(field.data('binding'), value, opts)
       return @
 
-class Transit.Form.Field extends Backbone.Marionette.ItemView
+class Transit.Form.Field extends Transit.View
   events:
     'change' : 'validate'
   binding: null

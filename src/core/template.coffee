@@ -1,51 +1,37 @@
-Transit = @Transit || require 'transit'
+Transit = @Transit || require('transit')
+_ = this._ || require("underscore")
 
-class Transit.Template
-  @cache: {}
-  @compile:(html)-> _.template(html)
-  
-  @find: (path)=>
-    found = @cache[@pathify(path)]
-    if found is undefined then false else found
-    
-  @pathify: (path)->
-    if path.indexOf(@url) != -1 
-      return path 
-    else "#{@url}/#{path.replace(/^\//, '')}"
-  
-  @set: (path, html)=>
-    path = @pathify(path)
-    func = @compile(html)
-    template = new Transit.Template(path, html, func)
-    @cache[path] = template
-    template
-  
-  @url: '/transit/views'
-  path: ''
-  source: ""
-  func: null
-  
-  constructor:(path, html, func)->
-    @path   = path
-    @source = html
-    @func   = func
-    @
+class TemplateCache
+  cache: {}
+  get:(path)->
+    $.Deferred((dfd)=>
+      path ||= ""
+      return dfd.resolve(@cache[path]) if @cache[path]
+      if _.isFunction template
+        @cache[path] = template
+        return dfd.resolve(template)
 
-  render:(data)=>
-    return @source if @func is null
-    @func(data)
+      # dom script
+      template = $("[data-template-name='#{path}']")
+      if template.length is 0
+        if (/\//).test(template)
+          return $.get path, (data)=>
+            @cache[path] = Transit.compile(data)
+            dfd.resolve(@cache[path])
+        else 
+          @cache[path] = Transit.compile(path)
+      else 
+        @cache[path] = Transit.compile(template.html())
+
+      dfd.resolve(@cache[path])
+      
+    ).promise()
+  
+  set:(path, template)->
+  
+  clear:(paths...)->
+    delete @cache[path] for path in paths
 
 
-Transit.tpl = (path, callback)->
-  path     = Transit.Template.pathify(path)
-  existing = Transit.Template.find(path)
-  
-  if existing is false
-    $.get path, (data)-> 
-      template = Transit.Template.set(path, data)
-      callback(template)
-  else callback(existing)
-
-module?.exports = 
-  tpl: Transit.tpl
-  Template: Transit.Template
+Transit.TemplateCache = new TemplateCache()
+module?.exports = Transit.TemplateCache

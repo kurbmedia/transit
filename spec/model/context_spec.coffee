@@ -40,14 +40,12 @@ describe 'Context', ()->
         
       it 'assigns a context view object', ()->
         expect(audio.view)
-          .to.be.an.instanceof(Transit.View)
+          .to.be.an.instanceof(Transit.ContextView)
       
     describe 'when a view is defined', ()->
         
-      beforeEach ()-> Audio.view = Transit.View
+      beforeEach ()-> Audio.view = Transit.ContextView
         
       it 'assigns a view object', ()->
         expect(audio.view)
           .to.exist
-
-        

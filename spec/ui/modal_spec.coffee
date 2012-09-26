@@ -9,7 +9,7 @@ describe 'Modal', ()->
       
       beforeEach ()->
         spy = sinon.spy()
-        Transit.vent.on('modal:action', spy)
+        Transit.on('modal:action', spy)
         modal = Transit.modal()
         modal.perform(
           currentTarget: $('<a data-action="test"></a>')

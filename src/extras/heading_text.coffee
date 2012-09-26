@@ -10,9 +10,8 @@ class HeadingView extends Transit.ContextView
   template: Handlebars.compile("{{body}}")
   
 
-Transit.Contexts.setup('HeadingText', {
-  model: HeadingText,
-  view: HeadingView
-})
+HeadingText::view = HeadingView
+
+Transit.set('context', 'HeadingText', HeadingText)
 
 module?.exports = HeadingText

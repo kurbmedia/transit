@@ -32,6 +32,7 @@ libraries = [
   'src/core/browser.coffee'
   'src/core/selection.coffee'
   'src/core/validate.coffee'
+  'src/core/template.coffee'
   
   'src/views/view.coffee'
   
@@ -39,7 +40,6 @@ libraries = [
   'src/ui/modal.coffee'
   'src/ui/notify.coffee'
   'src/ui/panel.coffee'
-  'src/ui/toolbar.coffee'
   'src/ui/uploader.coffee'
     
   'src/model/asset.coffee'
@@ -57,7 +57,7 @@ libraries = [
 
 javascripts = []
 javascripts.push
-  path: 'build/transit.js'
+  path: 'dist/transit.js'
   files: libraries
   minify: true
 
@@ -72,7 +72,7 @@ javascripts.push
   minify: false
 
 javascripts.push
-  path:  'build/themes/bootstrap.js'
+  path:  'dist/themes/bootstrap.js'
   files: ['src/themes/bootstrap.coffee']
   minify: true
 
@@ -107,7 +107,7 @@ javascripts.push
 # made from two CSS source files
 
 stylesheets = {
-  'build/transit.css': [
+  'dist/transit.css': [
     'src/css/transit.scss'
   ]
   # ,
@@ -154,7 +154,7 @@ task 'build', 'Build JS from source', build = (cb) ->
       file_name = path.join('src', 'extras', extra)
       file_contents = CoffeeScript.compile "#{fs.readFileSync(file_name)}"
       fname = path.basename(file_name).replace(/\.coffee$/,'.js')
-      write_js "build/extras/#{fname}", file_contents
+      write_js "dist/extras/#{fname}", file_contents
       write_js "gh-pages/javascripts/extras/#{fname}", file_contents
   catch e
     print_error e, file_name, file_contents
@@ -177,8 +177,6 @@ task 'build', 'Build JS from source', build = (cb) ->
       
       if package.minify is true
         write_js mini, do ()->
-          adds = fs.readFileSync 'support/backbone-marionette.js'
-          code = [adds, code].join("\n\n")
           uglify.gen_code uglify.ast_squeeze uglify.ast_mangle parser.parse code
 
     cb() if typeof cb is 'function'

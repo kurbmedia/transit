@@ -1,20 +1,19 @@
-class Notify
-  template: ()->
-  constructor:()-> Transit.one('ready', @_setup)
-  error:(message)=> @_render(message, 'error')
-  info:(message)=> @_render(message, 'info')
-  success:(message)=> @_render(message, 'success')
-  
-  _render:(message, type)=>
-    Transit.Manager.append($(@template({ message: message, type: type })))
+Transit = @Transit or require('transit')
 
-  _setup:()=> 
-    Transit.tpl "/core/notification.jst", (templ)=>
-      @template = templ
+class Transit.Notify
+  error:(message)=> @render(message, 'error')
+  info:(message)=> @render(message, 'info')
+  success:(message)=> @render(message, 'success')
+  
+  render:(message, type)=>
+    Transit.ui.append $(@template({ message: message, type: type }))
   
 
-##
-# Expose object
-#
-Transit.Notify = new Notify()
+
+Transit.notify = (type, message)->
+  notice = new Transit.Notify()
+  notice[type](message)
+  @
+
+exports?.notify = Transit.notify
 module?.exports = Transit.Notify

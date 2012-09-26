@@ -3,7 +3,6 @@ _ = @_ || require('underscore')
 Transit = @Transit || require('transit')
 
 class Transit.Context extends Backbone.Model
-  @build_as: 'contexts_attributes'
   type: null
   deliverable: null
   defaults:
@@ -11,41 +10,35 @@ class Transit.Context extends Backbone.Model
     position: null
   
   view: null
-  
-  # track destroyed state, this allows add/delete of items 
-  # without immediate removal server side.
-  #
-  _pendingDestroy: false
 
-  initialize:()->
+  constructor:()->
+    Transit.runCallbacks.call(@, 'before:initialize')
     super
-    if @type is null
-      if @get('_type') is null then @set('_type', @constructor.name) 
-      @type = @get('_type')
-    
-    loaded = Transit.Contexts.load(@type)
+    @_setType()
+    view = @view
+    options = { model:@ }
+    options.el = ".managed-context[data-context-id='#{@id}']" unless @isNew()
+    view = Transit.ContextView if view is null
+    @view = new view(options)
 
-    if @view is null
-      options = { model: @ }
-      if @isNew()
-        options.el = ".managed-context[data-context-id='\#\{@id\}']" 
-      @view = new loaded.view(options)
-    
-    @on('change', (options)->
-      for name, value of options.changes
-        @view.trigger("change:#{name}") 
-      @view.trigger('change')
-    )
-    
-    @on('destroy', @cleanup)
-    @view.render()
-    @
+    @_bindView()
+    @on('destroy', @_destroy)
   
   # private
   
-  _cleanup:()=>
-    @view.remove()
+  _destroy:()->
+    @off(null, null, @)
+    @view.off(null, null, @)
     delete @view
+  
+  _setType:()->
+    if @type is null
+      if @get('_type') is null then @set('_type', @constructor.name) 
+      @type = @get('_type')
+  
+  _bindView:()->
+    @on 'change', (options)->
+      @view.trigger('update') if @view
   
 
 module?.exports = Transit.Context

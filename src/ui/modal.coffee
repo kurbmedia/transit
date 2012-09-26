@@ -2,58 +2,49 @@ Transit  = @Transit or require('transit')
 Backbone = @Backbone or require('backbone')
 _ = @_ or require('underscore')
 
-class Transit.Modal extends Backbone.View
-  handler: -> 
-    @$el.modal(show: true)
-      .one 'hidden', (event)=> 
-        Transit.vent.trigger('modal:close', @)
-        @trigger('close')
-    @one 'modal:close', ()=> 
-      @$el.modal('hide')
-    
-  tagName: 'div'
+class Transit.Modal extends Transit.View
   className: 'transit-modal'
   events:
     'click a[data-action],button[data-action]' : 'perform'
+
+  container: '#transit_ui'
+  containerMethod: 'append'
+  wrapper: false
+  
+  afterRender:()->
+    @$el.attr('id', "transit_modal_#{@cid}")
+      .addClass('out')
+    @handler.call(@, true)
+    @$el.removeClass('out')
+      .addClass('in')
+
+  handler: (open)-> 
+    if open is true
+      @$el.modal(show: true)
+        .one 'hidden', (event)=> 
+          Transit.trigger('modal:close', @)
+          @close()
+    else @$el.modal('hide')
+    @
   
   initialize: ->
     super
-    @on('close', @remove, @)
     @options = _.defaults @options,
       buttons: []
       title: "Title Missing"
       content: "Content missing"
-  
-  close: ()=>
-    @$el.trigger('hidden')
-    @remove()
-    @
 
   perform: (event)=>
     event.preventDefault()
     link = $(event.currentTarget)
     acts = link.attr('data-action')
-    Transit.vent.trigger('modal:action', acts, this)
-    @trigger('modal:close') if acts is 'close'
-
-  
-  remove:()->
-    @off()
-    @trigger('remove')
-    super
-    
-  render:()=>
-    modal = $(@template(@options))
-    modal.attr('id', "transit_modal_#{@cid}")
-    $('#transit_ui').append modal
-    @setElement $("#transit_modal_#{@cid}")
-    @trigger('open')
-    Transit.vent.trigger('modal:show', this)
-    @$el.addClass('out')
-    @handler.apply(@)
-    @$el.removeClass('out')
-    .addClass('in')
+    Transit.trigger('modal:action', acts, this)
+    @trigger('modal:action', acts, this)
+    if acts is 'close'
+      @handler.call(@, false)
     @
+
+  serialize: ()->  _.extend(super, @options)
 
 
 Transit.modal = (options = {}) ->

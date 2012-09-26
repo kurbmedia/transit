@@ -15,5 +15,5 @@ Browser =
 
 
 Transit = @Transit || require 'transit'
-Transit.browser  = @Transit.browser = Browser
-module?.exports  = Transit.browser
+Transit.browser = Browser
+module?.exports = Browser

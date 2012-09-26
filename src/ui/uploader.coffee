@@ -14,7 +14,7 @@ fileApiSupport = ()->
   input['files'] isnt undefined
 
 
-class Transit.Uploader extends Backbone.Marionette.ItemView
+class Transit.Uploader extends Transit.View
   tagName: 'div'
   className: 'transit-uploader'
   @native: XHRUploadSupport()

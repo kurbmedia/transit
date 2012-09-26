@@ -24,6 +24,7 @@ class Transit.Deliverable extends Backbone.Model
   
   # Override toJSON to provide a nested, rails-compatabile 
   # contexts_attributes hash
+
   toJSON: ->
     data = {}
     @contexts.each (con, index)-> data[index.toString()] = con.toJSON()

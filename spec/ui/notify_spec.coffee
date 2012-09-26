@@ -1,13 +1,15 @@
 describe 'Notify', ()->
   
+  notify = new Transit.Notify()
+  
   it 'has an error method', ()->
-    expect(Transit.Notify['error'])
+    expect(notify['error'])
       .to.exist
 
   it 'has an info method', ()->
-    expect(Transit.Notify['info'])
+    expect(notify['info'])
       .to.exist
 
   it 'has a success method', ()->
-    expect(Transit.Notify['success'])
+    expect(notify['success'])
       .to.exist

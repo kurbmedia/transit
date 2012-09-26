@@ -1,14 +1,14 @@
+Transit.compile = (data)-> Handlebars.compile(data)
+
 Transit.Manager::template = Handlebars.compile '
-  <h1 class="header">{{heading}}</h1>
-  {{> transit_save_button}}
-'
-Transit.Toolbar::template = Handlebars.compile '
+<h1 class="header">{{heading}}</h1>
+{{> transit_save_button}}
 <div class="toolbar-inner">
     {{> transit_navbar}}
-    <div class="panels">
-    </div>
+    {{> transit_panels}}
 </div>
 '
+
 Handlebars.registerPartial 'transit_navbar', '
 <div class="navbar">
   <div class="navbar-inner">
@@ -18,11 +18,10 @@ Handlebars.registerPartial 'transit_navbar', '
 </div>
 
 '
-
-Transit.Panel::template = Handlebars.compile '
-<div class="transit-panel" id="{{cid}}">
-</div>
+Handlebars.registerPartial 'transit_navbar_tab', '
+<a href="#" class="{{css}}">{{{icon}}} {{{title}}}</a>
 '
+Transit.Panel::template = Handlebars.compile ''
 
 Transit.Modal::template = Handlebars.compile '
 <div class="modal fade">
@@ -40,7 +39,11 @@ Transit.Modal::template = Handlebars.compile '
   </div>
 </div>
 '
-Handlebars.registerPartial('transit_toolbar', Transit.Toolbar::template)
+Handlebars.registerPartial('transit_panels', '
+<div class="panels">
+</div>
+')
+
 Handlebars.registerPartial('transit_button', '
 <button class="btn {{css}}"{{#if action}} data-action="{{action}}{{/if}}">
   {{#if icon}}
@@ -74,6 +77,15 @@ Transit.Uploader::template = Handlebars.compile '
     <button class="btn btn-mini btn-primary">Choose</button>
   </span>
 '
+
+Transit.Notify::template = Handlebars.compile '
+<div class="alert alert-{{type}}">
+  <button type="button" class="close" data-dismiss="alert">×</button>
+  {{{message}}}
+</div>
+'
+# Transit.Template.set("#{root}/core/notification.jst", '
+# ')
 
 $.fn.modal.Constructor::removeBackdrop = ()->
   @$backdrop.remove()
