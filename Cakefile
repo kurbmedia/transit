@@ -207,11 +207,11 @@ task 'watch', 'Watch source files and build JS & CSS', ->
 
   fs.watchFile 'src/css/transit.scss', { interval: 100 }, (curr, prev)->
     console.log "Compile transit.scss"
-    exec 'sass --compass -t compact src/css/transit.scss build/transit.css', (err, stdout, stderr)->
+    exec 'sass --compass -t compact src/css/transit.scss dist/transit.css', (err, stdout, stderr)->
       throw err if err
       console.log "Wrote transit.css"
-      fs.writeFileSync "demo/transit.css", fs.readFileSync "build/transit.css"
-      exec 'sass --compass -t compressed src/css/transit.scss build/transit.min.css', (err, stdout, stderr)->
+      fs.writeFileSync "demo/transit.css", fs.readFileSync "dist/transit.css"
+      exec 'sass --compass -t compressed src/css/transit.scss dist/transit.min.css', (err, stdout, stderr)->
         throw err if err
         console.log "Wrote transit.min.css"
 

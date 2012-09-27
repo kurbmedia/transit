@@ -68,29 +68,36 @@
     };
 
     Transit.prototype.initializer = function(cb) {
-      var callback;
-      callback = $.Deferred(function(dfd) {
-        return cb(dfd.resolve);
-      }).promise();
-      this._initializers.push(callback);
+      this._initializers.push(cb);
       return this;
     };
 
     Transit.prototype.init = function() {
-      var _this = this;
+      var dfds,
+        _this = this;
       this.trigger('before:initialize');
-      return $.when.apply(null, this._initializers).then(function() {
+      dfds = _.collect(this._initializers.reverse(), function(callback) {
+        var dfd;
+        dfd = $.Deferred();
+        callback(dfd.resolve);
+        return dfd;
+      });
+      return $.when.apply(null, dfds).then(function() {
         _this.trigger('after:initialize');
         return _this.trigger('ready');
       });
     };
 
     Transit.prototype.manage = function(model, callback) {
-      var manager;
+      var manager,
+        _this = this;
+      this.ui.render();
       manager = new this.Manager({
         model: model
       });
-      this.ui.setView(manager).render(callback);
+      this.ui.setView(manager).render(callback).then(function() {
+        return _this.ui.show();
+      });
       return manager;
     };
 
@@ -169,6 +176,14 @@
       return this.remove();
     };
 
+    Interface.prototype.hide = function() {
+      if (!this.$el.hasClass("hidden")) {
+        Transit.trigger('ui:hide');
+      }
+      this.$el.addClass('hidden');
+      return this;
+    };
+
     Interface.prototype.render = function() {
       if (this.rendered === true) {
         return this;
@@ -193,6 +208,14 @@
       return this.subview;
     };
 
+    Interface.prototype.show = function() {
+      if (this.$el.hasClass("hidden")) {
+        Transit.trigger('ui:show');
+      }
+      this.$el.removeClass('hidden');
+      return this;
+    };
+
     return Interface;
 
   })(Backbone.View);
@@ -200,17 +223,6 @@
   _.extend(Transit.prototype, Backbone.Events);
 
   Transit = this.Transit = new Transit();
-
-  /*---------------------------------------
-    Initializers
-  ---------------------------------------
-  */
-
-
-  Transit.initializer(function(done) {
-    Transit.ui.render();
-    return done();
-  });
 
   /*---------------------------------------
    Exports
@@ -457,6 +469,8 @@
 
     View.prototype.helpers = {};
 
+    View.prototype.keep = false;
+
     View.prototype.manager = null;
 
     View.prototype.subviews = {};
@@ -526,14 +540,16 @@
       }
       Transit.runCallbacks.call(this, 'beforeClose', 'beforeRemove');
       this.$el.off('.transit');
-      this.remove();
+      if (this.keep !== true) {
+        this.remove();
+      }
       if (this.manager !== null) {
         this.manager.release(this);
       }
       this.closed = true;
       this._unbindNodes();
       this.trigger('close');
-      _ref1 = [this, this.model, this.collection, Transit];
+      _ref1 = [this.model, this.collection, Transit];
       for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
         target = _ref1[_i];
         if (target) {
@@ -546,6 +562,8 @@
       this.model = null;
       this.collection = null;
       Transit.runCallbacks.call(this, 'afterRemove', 'afterClose');
+      this.trigger('closed');
+      this.off(null, null, this);
       if (typeof callback === "function") {
         callback();
       }
@@ -593,7 +611,7 @@
         view = views[_i];
         this.subviews[view.cid] = null;
         delete this.subviews[view.cid];
-        if ($.contains(this.el, view.el)) {
+        if ($.contains(this.$el.get(0), $(view.el).get(0)) && view.keep === false) {
           view.detach();
         }
       }
@@ -612,9 +630,8 @@
       this.compile().then(function(tpl) {
         var content;
         content = Transit.render(tpl, _this.serialize());
-        if (_this.beforeRender) {
-          _this.beforeRender(tpl, content);
-        }
+        _this.trigger('render');
+        Transit.runCallbacks.call(_this, 'beforeRender');
         if (_this.wrapper === true) {
           _this.$el.html(content);
         } else {
@@ -627,6 +644,7 @@
         }
         Transit.runCallbacks.call(_this, 'afterRender');
         _this._bindNodes();
+        _this.trigger('rendered');
         if (typeof callback === "function") {
           callback();
         }
@@ -651,8 +669,7 @@
     };
 
     View.prototype._bindNodes = function() {
-      var attr, evt, node, selector, _base, _ref, _results,
-        _this = this;
+      var attr, evt, model, node, selector, _ref, _results;
       if (!this.model) {
         return this;
       }
@@ -661,12 +678,16 @@
       for (selector in _ref) {
         attr = _ref[selector];
         node = this.$(selector);
-        evt = typeof (_base = node.is('input, textarea, select')) === "function" ? _base({
-          "change.transit": "blur.transit"
-        }) : void 0;
-        _results.push(this.$el.on(evt, selector, (function() {
-          return _this.model.set("" + attr, node.val());
-        })));
+        evt = node.is('input, textarea, select') ? "change.transit" : "blur.transit";
+        model = this.model;
+        _results.push(this.$el.on(evt, selector, function() {
+          var props;
+          props = {};
+          props[attr] = node.val();
+          return model.set(props, {
+            silent: true
+          });
+        }));
       }
       return _results;
     };
@@ -1298,6 +1319,7 @@
 }).call(this);
 (function() {
   var Backbone, Transit, _,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -1323,38 +1345,29 @@
     Context.prototype.view = null;
 
     function Context() {
-      var options, view;
+      this._view_options = __bind(this._view_options, this);
+
+      var view;
       Transit.runCallbacks.call(this, 'before:initialize');
       Context.__super__.constructor.apply(this, arguments);
       this._setType();
       view = this.view;
-      options = {
-        model: this
-      };
-      if (!this.isNew()) {
-        options.el = ".managed-context[data-context-id='" + this.id + "']";
-      }
       if (view === null) {
         view = Transit.ContextView;
       }
-      this.view = new view(options);
+      this.view = new view(this._view_options());
       this._bindView();
       this.on('destroy', this._destroy);
     }
 
-    Context.prototype._destroy = function() {
-      this.off(null, null, this);
-      this.view.off(null, null, this);
-      return delete this.view;
-    };
-
     Context.prototype._setType = function() {
-      if (this.type === null) {
-        if (this.get('_type') === null) {
-          this.set('_type', this.constructor.name);
-        }
-        return this.type = this.get('_type');
+      if (this.type !== null) {
+        return this;
       }
+      if (this.get('_type') === null) {
+        this.set('_type', this.constructor.name);
+      }
+      return this.type = this.get('_type');
     };
 
     Context.prototype._bindView = function() {
@@ -1363,6 +1376,17 @@
           return this.view.trigger('update');
         }
       });
+    };
+
+    Context.prototype._view_options = function() {
+      var options;
+      options = {
+        model: this
+      };
+      if (!this.isNew()) {
+        options.el = "[data-deliverable-id='" + this.id + "']";
+      }
+      return options;
     };
 
     return Context;
@@ -1395,7 +1419,18 @@
 
     Contexts.build_as = 'contexts_attributes';
 
-    Contexts.prototype.model = Transit.Context;
+    Contexts.prototype.comparator = function(model) {
+      return parseInt(model.get('position'));
+    };
+
+    Contexts.prototype.model = function(data) {
+      var klass;
+      klass = Transit.get('context', data['_type']);
+      if (klass === null || klass === void 0) {
+        klass = Transit.Context;
+      }
+      return new klass(data);
+    };
 
     return Contexts;
 
@@ -1438,12 +1473,26 @@
     Deliverable.prototype.view = null;
 
     Deliverable.prototype.initialize = function() {
+      var _this = this;
       if (this.type === null) {
         this.type = this.constructor.name;
       }
       this.contexts || (this.contexts = new Transit.Contexts());
       this.view || (this.view = new Transit.Region(this._view_options()));
       this.on('change:contexts', this._build_contexts);
+      this.contexts.on('add', function(model) {
+        return _this.view.add(model.view).render();
+      });
+      this.contexts.on('remove', function(model) {
+        var _ref, _ref1;
+        if ((_ref = model.view) != null) {
+          _ref.keep = false;
+        }
+        if (model.view) {
+          _this.view.release(model.view);
+        }
+        return (_ref1 = model.view) != null ? _ref1.close() : void 0;
+      });
       this._build_contexts();
       return this;
     };
@@ -1478,12 +1527,15 @@
     };
 
     Deliverable.prototype._build_contexts = function() {
-      var contexts;
+      var contexts, _ref;
       contexts = this.attributes.contexts || [];
       this.contexts.reset(contexts);
       this.unset('contexts', {
         silent: true
       });
+      if ((_ref = this.view) != null) {
+        _ref.update();
+      }
       return this;
     };
 
@@ -1558,15 +1610,34 @@
 
     ContextView.prototype.tagName = 'div';
 
-    ContextView.prototype.className = 'context';
+    ContextView.prototype.className = 'context managed-context';
+
+    ContextView.prototype.keep = true;
 
     ContextView.prototype.template = function() {
-      return 'item!';
+      return '';
     };
 
-    ContextView.prototype.onRender = function() {
+    ContextView.prototype.beforeRender = function() {
+      if (!this.model.isNew()) {
+        return this.wrapper = false;
+      }
+    };
+
+    ContextView.prototype.afterRender = function() {
       this.$el.attr('data-context-id', this.model.id).attr('data-context-type', this.model.type);
+      this.wrapper = true;
       return this;
+    };
+
+    ContextView.prototype.beforeClose = function() {
+      if (this.model.isNew()) {
+        return this.keep = false;
+      }
+    };
+
+    ContextView.prototype.afterClose = function() {
+      return this.keep = true;
     };
 
     return ContextView;
@@ -1599,10 +1670,31 @@
 
     Region.prototype.className = 'region';
 
+    Region.prototype.keep = true;
+
     Region.prototype.initialize = function() {};
 
+    Region.prototype.beforeRender = function() {
+      if (!this.model.isNew()) {
+        return this.wrapper = false;
+      }
+    };
+
     Region.prototype.afterRender = function() {
-      return this.$el.attr('data-deliverable-id', this.model.id).attr('data-deliverable-type', this.model.type);
+      this.$el.attr('data-deliverable-id', this.model.id).attr('data-deliverable-type', this.model.type);
+      this.wrapper = true;
+      return this.update();
+    };
+
+    Region.prototype.update = function() {
+      var _this = this;
+      return this.model.contexts.each(function(con) {
+        _this.release(con.view);
+        _this.add(con.view);
+        if (con.isNew()) {
+          return con.view.render();
+        }
+      });
     };
 
     return Region;
@@ -1636,27 +1728,27 @@
     Form.prototype.className = 'transit-form transit-panel';
 
     Form.prototype.events = {
-      'change input[data-binding]': 'update',
-      'blur input[data-binding]': 'update'
+      'change [data-binding]': 'update',
+      'blur [data-binding]': 'update'
     };
 
-    Form.prototype.initialize = function() {
-      return this.bindTo(this, 'item:rendered', this.setup);
-    };
-
-    Form.prototype.setup = function() {
-      var _this = this;
-      this.bindTo(this.model, 'change', this.render);
-      return this.$('input, textarea').each(function(i, node) {
-        var view;
-        view = new Transit.Form.Field({
-          el: $(node),
-          model: _this.model
-        });
-        return _this.on('close', (function() {
-          return view.close();
+    Form.prototype.afterRender = function() {
+      var prop, value, _ref, _results,
+        _this = this;
+      _ref = this.model.attributes;
+      _results = [];
+      for (prop in _ref) {
+        value = _ref[prop];
+        _results.push(this.$("[data-binding='" + prop + "']").each(function(i, node) {
+          node = $(node);
+          if (node.is(":input")) {
+            return node.val(value);
+          } else {
+            return node.html(value);
+          }
         }));
-      });
+      }
+      return _results;
     };
 
     Form.prototype.update = function(event) {
@@ -1675,52 +1767,6 @@
     return Form;
 
   })(Transit.Panel);
-
-  Transit.Form.Field = (function(_super) {
-
-    __extends(Field, _super);
-
-    function Field() {
-      return Field.__super__.constructor.apply(this, arguments);
-    }
-
-    Field.prototype.events = {
-      'change': 'validate'
-    };
-
-    Field.prototype.binding = null;
-
-    Field.prototype.initialize = function() {
-      var attr;
-      attr = this.$el.data('binding');
-      if (attr !== void 0) {
-        this.binding = attr;
-        this.bindTo(this.model, "change:" + this.binding, this.update);
-      }
-      return this.update();
-    };
-
-    Field.prototype.validate = function(event) {
-      if (this.$el.is(':checkbox') || this.$el.is(":radio")) {
-        return this;
-      }
-    };
-
-    Field.prototype.update = function() {
-      if (this.$el.is(":checkbox")) {
-        if (this.model.get(this.binding)) {
-          return this.$el.attr('checked', 'checked');
-        }
-      } else if (this.$el.is(":radio") && this.model.get(this.binding) === this.$el.attr('value')) {
-        return this.$el.click();
-      } else {
-        return this.$el.val(this.model.get(this.binding));
-      }
-    };
-
-    return Field;
-
-  })(Transit.View);
 
   if (typeof module !== "undefined" && module !== null) {
     module.exports = Transit.Form;

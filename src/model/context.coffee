@@ -15,30 +15,29 @@ class Transit.Context extends Backbone.Model
     Transit.runCallbacks.call(@, 'before:initialize')
     super
     @_setType()
-    view = @view
-    options = { model:@ }
-    options.el = ".managed-context[data-context-id='#{@id}']" unless @isNew()
-    view = Transit.ContextView if view is null
-    @view = new view(options)
+    view  = @view
+    view  = Transit.ContextView if view is null
+    @view = new view(@_view_options())
 
     @_bindView()
     @on('destroy', @_destroy)
-  
-  # private
-  
-  _destroy:()->
-    @off(null, null, @)
-    @view.off(null, null, @)
-    delete @view
+
   
   _setType:()->
-    if @type is null
-      if @get('_type') is null then @set('_type', @constructor.name) 
-      @type = @get('_type')
+    return @ unless @type is null
+    if @get('_type') is null then @set('_type', @constructor.name) 
+    @type = @get('_type')
   
   _bindView:()->
     @on 'change', (options)->
       @view.trigger('update') if @view
+  
+  # Options for constructing the view
+  _view_options:()=>
+    options = 
+      model: @
+    options.el = "[data-deliverable-id='#{@id}']" unless @isNew()
+    options
   
 
 module?.exports = Transit.Context

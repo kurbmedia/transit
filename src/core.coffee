@@ -37,19 +37,26 @@ class Transit
   get:(type, name)-> @_cache[type.toLowerCase()][name]
   
   initializer: (cb)=> 
-    callback = $.Deferred((dfd)-> cb(dfd.resolve)).promise()
-    @_initializers.push(callback)
+    this._initializers.push(cb)
     @
 
   init: ()=> 
     @trigger('before:initialize')
-    $.when.apply(null, @_initializers).then ()=>
+    dfds = _.collect @_initializers.reverse(), (callback)->
+      dfd = $.Deferred()
+      callback(dfd.resolve)
+      return dfd
+
+      
+    $.when.apply(null, dfds).then ()=>
       @trigger('after:initialize')
       @trigger('ready')
 
   manage: (model, callback)=>
+    @ui.render()
     manager = new @Manager(model: model)
-    @ui.setView(manager).render(callback)
+    @ui.setView(manager).render(callback).then ()=>
+      @ui.show()
     manager
 
   render:(template, data)->
@@ -90,7 +97,12 @@ class Interface extends Backbone.View
     @subview.close() unless @subview is null
     @off(null, null, @)
     @remove()
-
+  
+  hide:()-> 
+    Transit.trigger('ui:hide') unless @$el.hasClass("hidden")
+    @$el.addClass('hidden')
+    @
+    
   render:()->
     return @ if @rendered is true
     @rendered = true
@@ -105,23 +117,15 @@ class Interface extends Backbone.View
     @subview.render().then (el)=>
       @$('#transit_manager').html(@subview.el)
     @subview
+  
+  show:()-> 
+    Transit.trigger('ui:show') if @$el.hasClass("hidden")
+    @$el.removeClass('hidden')
+    @
 
 _.extend( Transit.prototype, Backbone.Events )
 
 Transit = @Transit = new Transit()
-
-
-###---------------------------------------
-  Initializers
----------------------------------------### 
-
-##
-# create the global interface layout
-# which contains any editing functionality
-#
-Transit.initializer (done)->
-  Transit.ui.render()
-  done()
   
 ###---------------------------------------
  Exports

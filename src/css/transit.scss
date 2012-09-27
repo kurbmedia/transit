@@ -44,10 +44,6 @@ html.transit-ui-hidden{ margin-right:0; }
   @import "./bootstrap/accordion";
   @import "./bootstrap/utilities"; 
 
-  &.hidden{ 
-    div.transit-toolbar{ right:-400px; }
-  }
-  
   #transit_manager{
     position:fixed; top:0px; right:0px; bottom:0px; min-width:300px;
     @include background-image(linear-gradient(left, rgba(black, 0.8) 0%, rgba(black, 0.6) 15px, rgba(black, 0.6) 100%));

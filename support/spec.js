@@ -91,6 +91,6 @@ app = connect()
   .use(makejs)
   .use(makehtml)
   .use(connect.static(root))
-  .listen(3000);
+  .listen(3001);
 
 console.log("Listening on port 3000");

@@ -18,6 +18,9 @@ class Transit.View extends Backbone.View
   # helper functions and data to be passed to the template function
   helpers: {}
   
+  # on close, remove the element?
+  keep: false
+  
   # track the parent view if exists
   manager: null
   
@@ -73,7 +76,8 @@ class Transit.View extends Backbone.View
       view.close()
     Transit.runCallbacks.call(@, 'beforeClose', 'beforeRemove')
     @$el.off('.transit')
-    @remove()
+    
+    @remove() unless @keep is true
     
     unless @manager is null
       @manager.release(@)
@@ -82,13 +86,15 @@ class Transit.View extends Backbone.View
     @_unbindNodes()
     @trigger('close')
 
-    for target in [@, @model, @collection, Transit]
+    for target in [@model, @collection, Transit]
       target.off(null, null, @) if target
     
     @getViews().each (view)-> view.close()
     @model = null
     @collection = null
     Transit.runCallbacks.call(@, 'afterRemove', 'afterClose')
+    @trigger('closed')
+    @off(null, null, @)
     callback?()
     @
 
@@ -121,7 +127,7 @@ class Transit.View extends Backbone.View
     for view in views
       @subviews[view.cid] = null
       delete @subviews[view.cid]
-      if $.contains(@el, view.el)
+      if $.contains(@$el.get(0), $(view.el).get(0)) and view.keep is false
         view.detach()
     if views.length is 1
       return views[0]
@@ -132,7 +138,8 @@ class Transit.View extends Backbone.View
     dfd = $.Deferred()
     @compile().then (tpl)=>
       content = Transit.render(tpl, @serialize())
-      @beforeRender(tpl, content) if @beforeRender 
+      @trigger('render')
+      Transit.runCallbacks.call(@, 'beforeRender')
       if @wrapper is true
         @$el.html(content)
       else 
@@ -143,6 +150,7 @@ class Transit.View extends Backbone.View
         $.fn[@containerMethod].call($(@container), @$el)
       Transit.runCallbacks.call(@, 'afterRender')
       @_bindNodes()
+      @trigger('rendered')
       callback?()
       dfd.resolveWith(@, [@.el])
 
@@ -169,8 +177,12 @@ class Transit.View extends Backbone.View
     return @ unless @model
     for selector, attr of @bindings
       node = @$(selector)
-      evt = node.is('input, textarea, select')? "change.transit" : "blur.transit"
-      @$el.on evt, selector, (=> @model.set("#{attr}", node.val()))
+      evt = if node.is('input, textarea, select') then "change.transit" else "blur.transit"
+      model = @model
+      @$el.on evt, selector, ()-> 
+        props = {}
+        props[attr] = node.val()
+        model.set(props, { silent: true })
 
   _unbindNodes: ()-> @$(selector).off('.transit') for selector in _.keys(@bindings)
 
