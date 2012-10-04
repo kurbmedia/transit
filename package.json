@@ -1,6 +1,6 @@
 {
   "name"            : "transit",
-  "version"         : "0.0.2",
+  "version"         : "0.0.3",
   "description"     : "Awesome content delivery.",
   "url"             : "https://kurbmedia.github.com/transit",
   "keywords"        : ["cms", "client", "browser", "content management", "transit"],
