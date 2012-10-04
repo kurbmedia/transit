@@ -197,3 +197,20 @@ describe 'View', ()->
           .to.be.true
       
       afterEach ()-> spy.reset()
+    
+    describe 'adding with view.prepend', ()->
+      sub = new Transit.View()
+      
+      beforeEach (done)->
+        view.prepend(sub).render(done)
+      
+      it 'adds the sub view element to the parent', ()->
+        expect($.contains(view.el, sub.el))
+          .to.be.true
+        
+      it 'prepends the view to the beginning of the parent', ()->
+        expect(view.$el.children().eq(0).get(0).tagName)
+          .to.equal(sub.el.tagName)
+      
+      afterEach (done)-> sub.close(done)
+      

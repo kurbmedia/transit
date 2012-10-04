@@ -65,6 +65,23 @@ describe 'Manager window', ()->
       it 'adds a tab to the navbar', ()->
         expect(navbar.$("li[rel='#{panel.cid}']"))
           .to.have.length(1)
+    
+    describe 'adding panels with prepend', ()->
+      
+      before (done)-> 
+        manager.add(panel2)
+        manager.prepend(panel)
+        done()
+        
+      after (done)-> manager.reset(done)
+      
+      it 'prepends the to the panels view', ()->
+        expect(panels.$el.children().eq(0).attr('id'))
+          .to.equal("transit_panel_#{panel.cid}")
+  
+      it 'prepends a tab to the navbar', ()->
+        expect(navbar.$("li:eq(0)").attr('rel'))
+          .to.include(panel.cid)
         
     describe 'removing panels with .release', ()->
         

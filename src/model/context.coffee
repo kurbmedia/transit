@@ -3,14 +3,15 @@ _ = @_ || require('underscore')
 Transit = @Transit || require('transit')
 
 class Transit.Context extends Backbone.Model
-  type: null
+  type: 'Context'
   deliverable: null
   defaults:
     _type: null
     position: null
   
   view: null
-
+  _destroyed: false
+  
   constructor:()->
     Transit.runCallbacks.call(@, 'before:initialize')
     super
@@ -18,15 +19,26 @@ class Transit.Context extends Backbone.Model
     view  = @view
     view  = Transit.ContextView if view is null
     @view = new view(@_view_options())
-
     @_bindView()
-    @on('destroy', @_destroy)
-
+      
+  destroy:()->
+    if @isNew()
+      super
+    else @_destroyed = true
+    @
+  
+  toJSON:()->
+    base = super
+    base['_destroy'] = true if @_destroyed
+    base
   
   _setType:()->
-    return @ unless @type is null
-    if @get('_type') is null then @set('_type', @constructor.name) 
-    @type = @get('_type')
+    unless @type is null or @type is undefined
+      return @
+    current = @get('_type')
+    if current is null or current is undefined
+      throw new Error("Contexts must declare a 'type' attribute.")
+    @type = current
   
   _bindView:()->
     @on 'change', (options)->
@@ -36,7 +48,7 @@ class Transit.Context extends Backbone.Model
   _view_options:()=>
     options = 
       model: @
-    options.el = "[data-deliverable-id='#{@id}']" unless @isNew()
+    options.el = "[data-context-id='#{@id}']" unless @isNew()
     options
   
 

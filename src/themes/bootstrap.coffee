@@ -10,7 +10,7 @@ Transit.Manager::template = Handlebars.compile '
 '
 
 Handlebars.registerPartial 'transit_navbar', '
-<div class="navbar">
+<div class="navbar navbar-fixed-top navbar-inverse">
   <div class="navbar-inner">
     <ul class="transit-nav-bar nav">
     </ul>

@@ -9,8 +9,10 @@ class Transit.ContextView extends Transit.View
   template: ()-> ''
   beforeRender:()-> @wrapper = false unless @model.isNew()
   afterRender:()->
-    @$el.attr('data-context-id', @model.id)
-      .attr('data-context-type', @model.type)
+    unless @$el.attr('data-context-id')
+      @$el.attr('data-context-id', @model.id)
+    unless @$el.attr('data-context-type')
+      @$el.attr('data-context-type', @model.type)
     @wrapper = true
     @
   

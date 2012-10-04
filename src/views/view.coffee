@@ -123,6 +123,15 @@ class Transit.View extends Backbone.View
     callback?(views.values())
     views
   
+  prepend:(views...)->
+    @add(views)
+    for view in views
+      view.$el.detach()
+        .prependTo(@$el)
+    if views.length is 1
+      return views[0]
+    else return views
+  
   release:(views...)=>
     for view in views
       @subviews[view.cid] = null

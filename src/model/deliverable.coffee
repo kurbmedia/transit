@@ -38,7 +38,9 @@ class Transit.Deliverable extends Backbone.Model
     @contexts.each (con, index)-> data[index.toString()] = con.toJSON()
     result = {}
     result["#{Transit.Contexts.build_as}"] = data
-    { page: _.extend(super, result) }
+    sends = {}
+    sends[(@type || @get('_type')).toLowerCase()] = _.extend(super, result) 
+    sends
   
   # Parse the contexts attributes into a collection
   _build_contexts:()=>

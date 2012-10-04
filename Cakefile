@@ -31,7 +31,6 @@ libraries = [
   'src/core.coffee'
   'src/core/browser.coffee'
   'src/core/selection.coffee'
-  'src/core/validate.coffee'
   'src/core/template.coffee'
   
   'src/views/view.coffee'
@@ -41,6 +40,8 @@ libraries = [
   'src/ui/notify.coffee'
   'src/ui/panel.coffee'
   'src/ui/uploader.coffee'
+  'src/ui/form.coffee'
+#  'src/ui/datepicker.coffee'
     
   'src/model/asset.coffee'
   'src/model/assets.coffee'
@@ -51,7 +52,6 @@ libraries = [
   'src/views/asset_manager.coffee'
   'src/views/context.coffee'
   'src/views/region.coffee'
-  'src/views/form.coffee'
   
 ]
 
@@ -86,35 +86,6 @@ javascripts.push
   path:  'gh-pages/javascripts/transit-bootstrap.js'
   files: ['src/themes/bootstrap.coffee']
   minify: true
-# 
-# do ()->
-#   specs = []
-#   for file in libraries
-#     file = file.replace(/\.coffee$/,'_spec.coffee')
-#     specs.push(file.replace(/^src/, 'spec'))
-#   
-#   javascripts.push
-#     path: 'spec/support/runner.js'
-#     files: specs
-#     minify: false
-
-  
-
-
-
-# Stylesheet sources
-# Example configuration with one CSS package,
-# made from two CSS source files
-
-stylesheets = {
-  'dist/transit.css': [
-    'src/css/transit.scss'
-  ]
-  # ,
-  #   'gh-pages/stylesheets/transit.css': [
-  #     'src/css/transit.scss'
-  #   ]
-}
 
 task 'test', 'Run mocha suite', -> 
   runner = "./node_modules/mocha-phantomjs/lib/mocha-phantomjs.coffee"
@@ -198,22 +169,11 @@ task 'watch', 'Watch source files and build JS & CSS', ->
             invoke 'build'
       )(file)
   
-  
   for file in wrench.readdirSyncRecursive('src/extras/')
     file = path.join('src', 'extras', file)
     fs.watchFile file, { interval: 100 }, (curr, prev) ->
       if +curr.mtime isnt +prev.mtime
         invoke "build"
-
-  fs.watchFile 'src/css/transit.scss', { interval: 100 }, (curr, prev)->
-    console.log "Compile transit.scss"
-    exec 'sass --compass -t compact src/css/transit.scss dist/transit.css', (err, stdout, stderr)->
-      throw err if err
-      console.log "Wrote transit.css"
-      fs.writeFileSync "demo/transit.css", fs.readFileSync "dist/transit.css"
-      exec 'sass --compass -t compressed src/css/transit.scss dist/transit.min.css', (err, stdout, stderr)->
-        throw err if err
-        console.log "Wrote transit.min.css"
 
 # Write javascript with a header
 write_js = (filename, body) ->
@@ -232,15 +192,7 @@ get_libs = (dir, callback)->
   callback?(files)
   files
 
-# Write stylesheet with a header
-write_stylesheet = (filename, body) ->
-  fs.writeFileSync filename, """
-#{body}
-"""
-  console.log "Wrote #{filename}"
 
-
-#
 Array::unique = ->
   output = {}
   output[@[key]] = @[key] for key in [0...@length]
@@ -254,14 +206,6 @@ javascript_sources = ->
     for source in sources
       all_sources.push source
   all_sources.unique()
-
-stylesheet_sources = ->
-  all_sources = []
-  for stylesheet, sources of stylesheets
-    for source in sources
-      all_sources.push source
-  all_sources.unique()
-
 
 # Print error message
 print_error = (error, file_name, file_contents) ->

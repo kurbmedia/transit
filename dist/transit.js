@@ -340,40 +340,6 @@
 
 }).call(this);
 (function() {
-  var Transit, _;
-
-  Transit = this.Transit || require('transit');
-
-  _ = this._ || require('underscore');
-
-  Transit.Validator = (function() {
-
-    function Validator() {}
-
-    Validator.prototype.messages = {
-      required: 'Required',
-      regexp: 'Invalid',
-      email: 'Invalid email address',
-      url: 'Invalid URL',
-      match: 'Must match field "{{field}}"'
-    };
-
-    return Validator;
-
-  })();
-
-  Transit.validate = function(input) {};
-
-  if (typeof exports !== "undefined" && exports !== null) {
-    exports.validate = Transit.validate;
-  }
-
-  if (typeof module !== "undefined" && module !== null) {
-    module.exports = Transit.Validator;
-  }
-
-}).call(this);
-(function() {
   var TemplateCache, Transit, _,
     __slice = [].slice;
 
@@ -604,6 +570,21 @@
       return views;
     };
 
+    View.prototype.prepend = function() {
+      var view, views, _i, _len;
+      views = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      this.add(views);
+      for (_i = 0, _len = views.length; _i < _len; _i++) {
+        view = views[_i];
+        view.$el.detach().prependTo(this.$el);
+      }
+      if (views.length === 1) {
+        return views[0];
+      } else {
+        return views;
+      }
+    };
+
     View.prototype.release = function() {
       var view, views, _i, _len;
       views = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
@@ -772,23 +753,26 @@
         tab.on('activate', function() {
           var wants;
           wants = this.panel;
+          that.show();
           return that.getViews().each(function(view) {
             if (view.cid === wants) {
               view.$el.addClass('active');
-              if (view.active) {
-                return view.active();
-              }
+              return typeof view.active === "function" ? view.active() : void 0;
             } else {
               view.$el.removeClass('active');
               return view._tab.$el.removeClass('active');
             }
           });
         });
+        panel.on('inactive', function() {
+          that.hide();
+          return that.getViews().each(function(view) {
+            view.$el.removeClass('active');
+            return view._tab.$el.removeClass('active');
+          });
+        });
         this.navbar.add(tab).render();
         this.panels.add(panel).render();
-      }
-      if (this.navbar.$('li.active').length === 0) {
-        this.navbar.$('a:eq(0)').click();
       }
       if (panels.length === 1) {
         return panels[0];
@@ -805,6 +789,22 @@
     Manager.prototype.afterRender = function() {
       this.panels.setElement(this.$('div.panels:eq(0)')).render();
       return this.navbar.setElement(this.$('ul.transit-nav-bar')).render();
+    };
+
+    Manager.prototype.prepend = function() {
+      var panel, panels, _i, _len;
+      panels = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      this.add.apply(this, panels);
+      for (_i = 0, _len = panels.length; _i < _len; _i++) {
+        panel = panels[_i];
+        panel.$el.detach().prependTo(this.panels.$el);
+        panel._tab.$el.detach().prependTo(this.navbar.$el);
+      }
+      if (panels.length === 1) {
+        return panels[0];
+      } else {
+        return panels;
+      }
     };
 
     Manager.prototype.save = function() {
@@ -921,6 +921,35 @@
     Panels.prototype.className = 'panels';
 
     Panels.prototype.wrapper = false;
+
+    Panels.prototype.events = {
+      'click span.close': 'deactivate'
+    };
+
+    Panels.prototype.show = function() {
+      return this.$('span.close').show();
+    };
+
+    Panels.prototype.hide = function() {
+      return this.$('span.close').hide();
+    };
+
+    Panels.prototype.afterRender = function() {
+      if (!(this.$('span.close').length > 0)) {
+        this.$el.append("<span class='close'>&times;</span>");
+        return this.$('span.close').hide();
+      }
+    };
+
+    Panels.prototype.deactivate = function() {
+      this.getViews().each(function(view) {
+        if (view.$el.hasClass('active')) {
+          view.trigger('inactive');
+          return typeof view.inactive === "function" ? view.inactive() : void 0;
+        }
+      });
+      return this;
+    };
 
     return Panels;
 
@@ -1213,6 +1242,73 @@
 
 }).call(this);
 (function() {
+  var Backbone, Transit, _,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  Transit = this.Transit || require('transit');
+
+  Backbone = this.Backbone || require('backbone');
+
+  _ = this._ || require('underscore');
+
+  Transit.Form = (function(_super) {
+
+    __extends(Form, _super);
+
+    function Form() {
+      return Form.__super__.constructor.apply(this, arguments);
+    }
+
+    Form.prototype.className = 'transit-form transit-panel';
+
+    Form.prototype.events = {
+      'change [data-binding]': 'update',
+      'blur [data-binding]': 'update'
+    };
+
+    Form.prototype.afterRender = function() {
+      var prop, value, _ref, _results,
+        _this = this;
+      _ref = this.model.attributes;
+      _results = [];
+      for (prop in _ref) {
+        value = _ref[prop];
+        _results.push(this.$("[data-binding='" + prop + "']").each(function(i, node) {
+          node = $(node);
+          if (node.is(":input")) {
+            return node.val(value);
+          } else {
+            return node.html(value);
+          }
+        }));
+      }
+      return _results;
+    };
+
+    Form.prototype.update = function(event) {
+      var field, opts, value;
+      if (event && event.currentTarget) {
+        field = $(event.currentTarget);
+        value = field.val();
+        opts = event.type === 'blur' ? {
+          silent: true
+        } : {};
+        this.model.set(field.data('binding'), value, opts);
+        return this;
+      }
+    };
+
+    return Form;
+
+  })(Transit.Panel);
+
+  if (typeof module !== "undefined" && module !== null) {
+    module.exports = Transit.Form;
+  }
+
+}).call(this);
+(function() {
   var Backbone, Transit,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -1333,7 +1429,7 @@
 
     __extends(Context, _super);
 
-    Context.prototype.type = null;
+    Context.prototype.type = 'Context';
 
     Context.prototype.deliverable = null;
 
@@ -1343,6 +1439,8 @@
     };
 
     Context.prototype.view = null;
+
+    Context.prototype._destroyed = false;
 
     function Context() {
       this._view_options = __bind(this._view_options, this);
@@ -1357,17 +1455,36 @@
       }
       this.view = new view(this._view_options());
       this._bindView();
-      this.on('destroy', this._destroy);
     }
 
+    Context.prototype.destroy = function() {
+      if (this.isNew()) {
+        Context.__super__.destroy.apply(this, arguments);
+      } else {
+        this._destroyed = true;
+      }
+      return this;
+    };
+
+    Context.prototype.toJSON = function() {
+      var base;
+      base = Context.__super__.toJSON.apply(this, arguments);
+      if (this._destroyed) {
+        base['_destroy'] = true;
+      }
+      return base;
+    };
+
     Context.prototype._setType = function() {
-      if (this.type !== null) {
+      var current;
+      if (!(this.type === null || this.type === void 0)) {
         return this;
       }
-      if (this.get('_type') === null) {
-        this.set('_type', this.constructor.name);
+      current = this.get('_type');
+      if (current === null || current === void 0) {
+        throw new Error("Contexts must declare a 'type' attribute.");
       }
-      return this.type = this.get('_type');
+      return this.type = current;
     };
 
     Context.prototype._bindView = function() {
@@ -1384,7 +1501,7 @@
         model: this
       };
       if (!this.isNew()) {
-        options.el = "[data-deliverable-id='" + this.id + "']";
+        options.el = "[data-context-id='" + this.id + "']";
       }
       return options;
     };
@@ -1514,16 +1631,16 @@
     };
 
     Deliverable.prototype.toJSON = function() {
-      var data, result;
+      var data, result, sends;
       data = {};
       this.contexts.each(function(con, index) {
         return data[index.toString()] = con.toJSON();
       });
       result = {};
       result["" + Transit.Contexts.build_as] = data;
-      return {
-        page: _.extend(Deliverable.__super__.toJSON.apply(this, arguments), result)
-      };
+      sends = {};
+      sends[(this.type || this.get('_type')).toLowerCase()] = _.extend(Deliverable.__super__.toJSON.apply(this, arguments), result);
+      return sends;
     };
 
     Deliverable.prototype._build_contexts = function() {
@@ -1625,7 +1742,12 @@
     };
 
     ContextView.prototype.afterRender = function() {
-      this.$el.attr('data-context-id', this.model.id).attr('data-context-type', this.model.type);
+      if (!this.$el.attr('data-context-id')) {
+        this.$el.attr('data-context-id', this.model.id);
+      }
+      if (!this.$el.attr('data-context-type')) {
+        this.$el.attr('data-context-type', this.model.type);
+      }
       this.wrapper = true;
       return this;
     };
@@ -1703,73 +1825,6 @@
 
   if (typeof module !== "undefined" && module !== null) {
     module.exports = Transit.Region;
-  }
-
-}).call(this);
-(function() {
-  var Backbone, Transit, _,
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-  Transit = this.Transit || require('transit');
-
-  Backbone = this.Backbone || require('backbone');
-
-  _ = this._ || require('underscore');
-
-  Transit.Form = (function(_super) {
-
-    __extends(Form, _super);
-
-    function Form() {
-      return Form.__super__.constructor.apply(this, arguments);
-    }
-
-    Form.prototype.className = 'transit-form transit-panel';
-
-    Form.prototype.events = {
-      'change [data-binding]': 'update',
-      'blur [data-binding]': 'update'
-    };
-
-    Form.prototype.afterRender = function() {
-      var prop, value, _ref, _results,
-        _this = this;
-      _ref = this.model.attributes;
-      _results = [];
-      for (prop in _ref) {
-        value = _ref[prop];
-        _results.push(this.$("[data-binding='" + prop + "']").each(function(i, node) {
-          node = $(node);
-          if (node.is(":input")) {
-            return node.val(value);
-          } else {
-            return node.html(value);
-          }
-        }));
-      }
-      return _results;
-    };
-
-    Form.prototype.update = function(event) {
-      var field, opts, value;
-      if (event && event.currentTarget) {
-        field = $(event.currentTarget);
-        value = field.val();
-        opts = event.type === 'blur' ? {
-          silent: true
-        } : {};
-        this.model.set(field.data('binding'), value, opts);
-        return this;
-      }
-    };
-
-    return Form;
-
-  })(Transit.Panel);
-
-  if (typeof module !== "undefined" && module !== null) {
-    module.exports = Transit.Form;
   }
 
 }).call(this);

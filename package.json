@@ -6,26 +6,27 @@
   "keywords"        : ["cms", "client", "browser", "content management", "transit"],
   "author"          : "kurb media, llc <dev@kurbmedia.com>",
   "contributors"    : ["Brent Kirby"],
+
   "dependencies"    : {
-    "backbone"                : "0.9.2",
-    "underscore"              : ">=1.3.1",
-    "uglify-js"               : ">= 1.3.3"
+    "backbone"   : "0.9.2",
+    "underscore" : ">=1.3.1"
   },
   
   "devDependencies": {
-    "mocha" : ">= 1.5.0",
+    "mocha"         : ">= 1.5.0",
     "coffee-script" : ">=1.3.3",
-    "chai": "latest",
-    "sinon": "latest",
-    "async": "0.1.22",
-    "requirejs": "2.0.6",
-    "connect" : "2.4.6",
-    "wrench": "latest"
+    "chai"          : "latest",
+    "sinon"         : "latest",
+    "async"         : "0.1.22",
+    "requirejs"     : "2.0.6",
+    "connect"       : "2.4.6",
+    "wrench"        : "latest",
+    "uglify-js"     : ">= 1.3.3"
   },
   
   "repository"      : {
     "type": "git",
-    "url": "git://github.com/kurbmedia/transit.git"
+    "url": "git://github.com/transitcms/transit.git"
   },
   
   "main"     : "./lib/transit.js"

@@ -22,21 +22,27 @@ class Transit.Manager extends Transit.View
       tab.panel  = panel.cid
       panel._tab = tab
       that = @panels
+
       tab.on 'activate', ()->
         wants = @panel
+        that.show()
         that.getViews().each (view)->
           if view.cid is wants
             view.$el.addClass('active')
-            view.active() if view.active
+            view.active?()
           else 
             view.$el.removeClass('active')
             view._tab.$el.removeClass('active')
+
+      panel.on 'inactive', ()->
+        that.hide()
+        that.getViews().each (view)->
+          view.$el.removeClass('active')
+          view._tab.$el.removeClass('active')
+        
       @navbar.add(tab).render()
       @panels.add(panel).render()
       
-    if @navbar.$('li.active').length is 0
-      @navbar.$('a:eq(0)').click()
-
     if panels.length is 1
       return panels[0]
     else return panels
@@ -48,7 +54,18 @@ class Transit.Manager extends Transit.View
   afterRender: ()->
     @panels.setElement(@$('div.panels:eq(0)')).render()
     @navbar.setElement(@$('ul.transit-nav-bar')).render()
-
+  
+  prepend: (panels...)->
+    @add(panels...)
+    for panel in panels
+      panel.$el.detach()
+        .prependTo(@panels.$el)
+      panel._tab.$el.detach()
+        .prependTo(@navbar.$el)
+    if panels.length is 1
+      return panels[0]
+    else return panels
+  
   save:()-> 
     @trigger("before:save")
     @model.save()
@@ -105,6 +122,26 @@ class Transit.Manager.Panels extends Transit.View
   tagName: 'div'
   className: 'panels'
   wrapper: false
+  events: 
+    'click span.close' : 'deactivate'
+  
+  show: ()->
+    @$('span.close').show()
+  
+  hide: ()->
+    @$('span.close').hide()
+
+  afterRender:()->
+    unless @$('span.close').length > 0
+      @$el.append("<span class='close'>&times;</span>")
+      @$('span.close').hide()
+  
+  deactivate:()->
+    @getViews().each (view)->
+      if view.$el.hasClass('active')
+        view.trigger('inactive')
+        view.inactive?()
+    @
 
 class Transit.Manager.Navbar extends Transit.View
   template: ()->

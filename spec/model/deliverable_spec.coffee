@@ -1,7 +1,9 @@
 describe 'Deliverable', ()->
   item = null
   
-  beforeEach ()-> item = new Transit.Deliverable()
+  beforeEach ()-> 
+    item = new Transit.Deliverable()
+    item.type = 'Page'
   
   describe 'any instance', ()->
     

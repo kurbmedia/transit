@@ -5,7 +5,7 @@ class Transit.Panel extends Transit.View
   title: 'Detail',
   icon: ''
   _tab: null
-  
+
   template: ()-> ''
   constructor:->
     super
@@ -16,5 +16,6 @@ class Transit.Panel extends Transit.View
     if @$el.attr('id') is undefined
       @$el.attr("id", "transit_panel_#{@cid}")
     @$el.attr('rel', @cid)
+    
   
 module?.exports = Transit.Panel

@@ -23,5 +23,4 @@ class Transit.Form extends Transit.Panel
       @model.set(field.data('binding'), value, opts)
       return @
 
-
 module?.exports = Transit.Form
