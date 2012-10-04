@@ -41,6 +41,7 @@ libraries = [
   'src/ui/panel.coffee'
   'src/ui/uploader.coffee'
   'src/ui/form.coffee'
+  'src/ui/toolbar.coffee'
 #  'src/ui/datepicker.coffee'
     
   'src/model/asset.coffee'

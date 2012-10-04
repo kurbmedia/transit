@@ -2,16 +2,16 @@ describe 'Manager window', ()->
   
   item = new Transit.Deliverable()
   manager = null 
-  panels  = null
-  navbar  = null
+  toolbar = null
+  list    = null
 
   before (done)->
     manager = Transit.manage(item)
     done()
 
   beforeEach (done)->
-    panels  = manager.panels
-    navbar  = manager.navbar
+    toolbar = manager.toolbar
+    list    = toolbar.list
     done()
     
   
@@ -20,16 +20,12 @@ describe 'Manager window', ()->
       Transit.View
     )
   
-  it 'creates a view for its panel container', ()->
-    expect(manager.panels).to.be.an
-      .instanceof(Transit.View)
-
   it 'creates a nav-bar list', ()->
     expect(manager.$('ul.transit-nav-bar'))
       .to.have.length.above(0)
    
-  it 'creates a tab bar instance', ()->
-    expect(manager.navbar)
+  it 'creates a toolbar instance', ()->
+    expect(manager.toolbar)
        .to.exist
   
   it 'sets a heading using the deliverable name', ()->
@@ -50,77 +46,73 @@ describe 'Manager window', ()->
     selector = "#transit_panel_#{panel.cid}"
     
     beforeEach (done)->
-      choose = -> panels.$(selector)
+      choose = -> $(selector)
       done()
     
-    describe 'adding panels with add', ()->
+    describe 'adding panels with addTab', ()->
       
-      before ()-> manager.add(panel)
+      before ()-> manager.addTabs(panel)
       after (done)-> manager.reset(done)
       
       it 'adds a panel to the panels view', ()->
-        expect(panels.$(selector))
+        expect($(selector))
           .to.have.length(1)
   
       it 'adds a tab to the navbar', ()->
-        expect(navbar.$("li[rel='#{panel.cid}']"))
+        expect(toolbar.$("li[rel='#{panel.cid}']"))
           .to.have.length(1)
     
     describe 'adding panels with prepend', ()->
       
       before (done)-> 
-        manager.add(panel2)
-        manager.prepend(panel)
+        manager.addTabs(panel2)
+        toolbar.prepend(panel)
         done()
         
       after (done)-> manager.reset(done)
       
-      it 'prepends the to the panels view', ()->
-        expect(panels.$el.children().eq(0).attr('id'))
-          .to.equal("transit_panel_#{panel.cid}")
-  
       it 'prepends a tab to the navbar', ()->
-        expect(navbar.$("li:eq(0)").attr('rel'))
+        expect(toolbar.$("li:eq(0)").attr('rel'))
           .to.include(panel.cid)
         
-    describe 'removing panels with .release', ()->
+    describe 'removing tabs with .removeTab', ()->
         
       afterEach ()-> manager.reset()
       
-      describe 'when there is only one panel', ()->
+      describe 'when there is only one tab', ()->
         
         beforeEach (done)-> 
-          manager.add(panel)
+          manager.addTabs(panel)
           done()
           
-        it 'removes the panel by object', (done)->
-          manager.release(panel)
+        it 'removes the tab by object', (done)->
+          manager.removeTabs(panel)
           done()
-          expect(panels.$(selector))
+          expect(manager.$(selector))
             .to.have.length(0)
           
         it 'removes the associated tab', (done)->
-          manager.release(panel)
+          manager.removeTabs(panel)
           done()
-          expect(navbar.$("li[rel='#{panel.cid}']"))
+          expect(toolbar.$("li[rel='#{panel.cid}']"))
             .to.have.length(0)
   
       describe 'when there are multiple panels', ()->
         
         beforeEach (done)->
-          manager.add(panel, panel2)
+          manager.addTabs(panel, panel2)
           done()
           
         it 'removes only the requested panel', (done)->
-          manager.release(panel)
+          manager.removeTabs(panel)
           done()
-          expect(panels.$('div.transit-panel'))
+          expect(manager.$('div.transit-panel'))
             .to.have.length(2)
       
         it 'removes only the associated tab', (done)->
-          manager.release(panel)
+          manager.removeTabs(panel)
           done()
-          expect(navbar.$("li"))
+          expect(toolbar.$("li"))
             .to.have.length(1)
         
         afterEach (done)-> manager.reset(done)
@@ -128,17 +120,17 @@ describe 'Manager window', ()->
     describe 'removing all panels with .reset', ()->
       
       beforeEach (done)->
-        manager.add(panel, panel2)
+        manager.addTabs(panel, panel2)
         done()
       
       it 'removes all panels', (done)->
         manager.reset()
         done()
-        expect(panels.$('div.transit-panel'))
+        expect(manager.$('div.transit-panel'))
           .to.have.length(0)
   
       it 'removes all tabs', (done)->
         manager.reset()
         done()
-        expect(navbar.$("li"))
+        expect(toolbar.$("li"))
           .to.have.length(0)

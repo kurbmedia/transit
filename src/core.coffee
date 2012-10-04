@@ -24,14 +24,12 @@ for klass in [Backbone.Model, Backbone.View, Backbone.Collection]
 
 class Transit
   VERSION: "0.3.0"
-  ui: null
+  manager: null
   
   _initializers: []
   _cache: 
     context: {}
 
-  constructor: ()-> @ui = new Interface()
-  
   compile: (data)-> _.template(data)
     
   get:(type, name)-> @_cache[type.toLowerCase()][name]
@@ -53,11 +51,12 @@ class Transit
       @trigger('ready')
 
   manage: (model, callback)=>
-    @ui.render()
-    manager = new @Manager(model: model)
-    @ui.setView(manager).render(callback).then ()=>
-      @ui.show()
-    manager
+    unless @manager is null
+      @manager.close()
+      @manager.model = model
+    else @manager = new @Manager(model: model)
+    @manager.render(callback)
+    @manager
 
   render:(template, data)->
     if _.isString(template)
@@ -82,45 +81,6 @@ class Transit
   end:()-> 
     @ui.close()
     @off(null, null, @)
-    @
-
-
-
-class Interface extends Backbone.View
-  tagName: 'div'
-  className: 'transit-ui'
-  id: 'transit_ui'
-  subview: null
-  rendered: false
-  append: (element)=> @$el.append(element)
-  close:()->
-    @subview.close() unless @subview is null
-    @off(null, null, @)
-    @remove()
-  
-  hide:()-> 
-    Transit.trigger('ui:hide') unless @$el.hasClass("hidden")
-    @$el.addClass('hidden')
-    @
-    
-  render:()->
-    return @ if @rendered is true
-    @rendered = true
-    @$el.append('<div id="transit_manager"></div>')
-      .appendTo($('body'))
-    @
-
-  setView:(view)->
-    unless @subview is null
-      @subview.close?()
-    @subview = view
-    @subview.render().then (el)=>
-      @$('#transit_manager').html(@subview.el)
-    @subview
-  
-  show:()-> 
-    Transit.trigger('ui:show') if @$el.hasClass("hidden")
-    @$el.removeClass('hidden')
     @
 
 _.extend( Transit.prototype, Backbone.Events )

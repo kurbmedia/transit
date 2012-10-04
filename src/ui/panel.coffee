@@ -16,6 +16,8 @@ class Transit.Panel extends Transit.View
     if @$el.attr('id') is undefined
       @$el.attr("id", "transit_panel_#{@cid}")
     @$el.attr('rel', @cid)
+  
+  activate:()-> @trigger('activate')
     
   
 module?.exports = Transit.Panel

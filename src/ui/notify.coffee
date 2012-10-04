@@ -6,7 +6,9 @@ class Transit.Notify
   success:(message)=> @render(message, 'success')
   
   render:(message, type)=>
-    Transit.ui.append $(@template({ message: message, type: type }))
+    $(@template({ message: message, type: type }))
+      .addClass('transit-alert fade in')
+      .appendTo($('#transit_manager'))
   
 
 

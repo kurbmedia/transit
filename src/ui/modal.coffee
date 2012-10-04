@@ -7,20 +7,21 @@ class Transit.Modal extends Transit.View
   events:
     'click a[data-action],button[data-action]' : 'perform'
 
-  container: '#transit_ui'
-  containerMethod: 'append'
   wrapper: false
   
   afterRender:()->
+    Transit.manager.add(@)
     @$el.attr('id', "transit_modal_#{@cid}")
       .addClass('out')
     @handler.call(@, true)
     @$el.removeClass('out')
       .addClass('in')
+    
+  beforeClose:()-> Transit.manager.release(@)
 
   handler: (open)-> 
     if open is true
-      @$el.modal(show: true)
+      @$el.modal(show: true, backdrop: true)
         .one 'hidden', (event)=> 
           Transit.trigger('modal:close', @)
           @close()

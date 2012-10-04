@@ -42,5 +42,5 @@ class Selector
     @selection = @get()
     @selection
 
-Transit.Selection = @Transit.Selection = new Selector()
+Transit.selection = new Selector()
 module?.exports   = Transit.Selection

@@ -4,10 +4,6 @@ describe "Transit", ()->
     expect(Transit)
       .to.exist
   
-  it 'creates a .ui view element', ()->
-    expect(Transit.ui)
-      .to.be.an.instanceof(Backbone.View)
-  
   describe 'render', ()->
     
     template = Handlebars.compile("<p><span>{{test}}</span><span>{{tester}}</span></p>")
@@ -38,16 +34,8 @@ describe "Transit", ()->
     
     it 'renders the manager', (done)->
       done()
-      expect($('#transit_ui').length)
+      expect($('#transit_manager').length)
         .to.be.above(0)
-      expect($('#transit_manager').is(":empty"))
-        .to.be.false
-    
-    it 'adds the manager to the .ui', ()->
-      expect(Transit.ui.subview)
-        .to.exist
-      expect(Transit.ui.subview)
-        .to.equal(manage)
   
   describe 'the .one event handler', ()->
     
