@@ -7,23 +7,20 @@
   Transit.Manager.prototype.template = Handlebars.compile('\
 <h1 class="header">{{heading}}</h1>\
 {{> transit_save_button}}\
-<div class="toolbar-inner">\
-    {{> transit_navbar}}\
-    {{> transit_panels}}\
-</div>\
 ');
 
-  Handlebars.registerPartial('transit_navbar', '\
-<div class="navbar navbar-fixed-top navbar-inverse">\
+  Transit.Toolbar.prototype.template = Handlebars.compile('\
+<div class="navbar navbar-fixed-top navbar-inverse" id="transit_toolbar">\
   <div class="navbar-inner">\
     <ul class="transit-nav-bar nav">\
     </ul>\
   </div>\
 </div>\
-\
 ');
 
-  Handlebars.registerPartial('transit_navbar_tab', '\
+  Handlebars.registerPartial('transit_toolbar', Transit.Toolbar.prototype.template);
+
+  Handlebars.registerPartial('transit_toolbar_tab', '\
 <a href="#" class="{{css}}">{{{icon}}} {{{title}}}</a>\
 ');
 
@@ -104,7 +101,7 @@
     animate = this.$element.hasClass('fade') ? 'fade' : '';
     if (this.isShown && this.options.backdrop) {
       doAnimate = $.support.transition && animate;
-      this.$backdrop = $('<div class="modal-backdrop ' + animate + '" />').appendTo($('#transit_ui'));
+      this.$backdrop = $('<div class="modal-backdrop ' + animate + '" />').appendTo($('#transit_manager'));
       if (this.options.backdrop !== 'static') {
         this.$backdrop.one('click', (function() {
           return _this.hide();

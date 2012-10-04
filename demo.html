@@ -66,7 +66,7 @@ manager.add(panel);
                 </li>
                 <li>
                     Show a notification
-                    <pre class="prettyprint lang-javascript">Transit.notice(type, message);</pre>
+                    <pre class="prettyprint lang-javascript">Transit.notify(type, message);</pre>
                     <ul id="notice_testers">
                         <li><a class="success" href="#">Success message</a></li>
                         <li><a class="notice" href="#">Notice message</a></li>
@@ -123,7 +123,7 @@ manager.add(panel);
                 //panel   = new Transit.Form({ model: page, title: 'Info', template: '#page_form_template' });
                 content = new Transit.Panel({ title: 'Content' });
                 assets  = new Transit.AssetManager();
-                manager.add(content, assets);
+                manager.addTabs(content, assets);
                 
                 window.page   = page;
                 window.manage = manager;
@@ -161,13 +161,13 @@ manager.add(panel);
                 function(event){
                     event.preventDefault();
                     $(this).text('Remove it');
-                    manager.add(tester);
+                    manager.addTabs(tester);
                 },
                 
                 function(event){
                     event.preventDefault();
                     $(this).text('Add it');
-                    manager.release(tester);
+                    manager.removeTabs(tester);
                 }
             );
             
