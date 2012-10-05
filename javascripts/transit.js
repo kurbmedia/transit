@@ -119,11 +119,7 @@
       _results = [];
       for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
         type = _ref1[_j];
-        if (this[type]) {
-          _results.push(this[type]());
-        } else {
-          _results.push(void 0);
-        }
+        _results.push(typeof this[type] === "function" ? this[type]() : void 0);
       }
       return _results;
     };
@@ -368,6 +364,8 @@
 
     View.prototype.wrapper = true;
 
+    View.prototype.main = null;
+
     function View() {
       this.release = __bind(this.release, this);
 
@@ -401,9 +399,10 @@
       var view, views, _i, _len;
       views = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
       this.release(views);
+      this._setMain();
       for (_i = 0, _len = views.length; _i < _len; _i++) {
         view = views[_i];
-        this.$el.append(view.$el);
+        this.main.append(view.$el);
         this.subviews[view.cid] = view;
         view.manager = this;
       }
@@ -429,6 +428,9 @@
       }
       Transit.runCallbacks.call(this, 'beforeClose', 'beforeRemove');
       this.$el.off('.transit');
+      if (this.main !== null) {
+        this.main.off('.transit');
+      }
       if (this.keep !== true) {
         this.remove();
       }
@@ -497,9 +499,10 @@
       var view, views, _i, _len;
       views = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
       this.add(views);
+      this._setMain();
       for (_i = 0, _len = views.length; _i < _len; _i++) {
         view = views[_i];
-        view.$el.detach().prependTo(this.$el);
+        view.$el.detach().prependTo(this.main);
       }
       if (views.length === 1) {
         return views[0];
@@ -546,6 +549,7 @@
         if (_this.container !== null) {
           $.fn[_this.containerMethod].call($(_this.container), _this.$el);
         }
+        _this._setMain();
         Transit.runCallbacks.call(_this, 'afterRender');
         _this._bindNodes();
         _this.trigger('rendered');
@@ -594,6 +598,17 @@
         }));
       }
       return _results;
+    };
+
+    View.prototype._setMain = function() {
+      if (this.main !== null) {
+        return this;
+      }
+      if (this.main === null) {
+        return this.main = this.$el;
+      } else {
+        return this.main = this.$(this.main);
+      }
     };
 
     View.prototype._unbindNodes = function() {
@@ -1109,7 +1124,6 @@
         that = this;
         activator = function(wants) {
           var cid, view, _ref, _results;
-          that.list.find('li').removeClass("active");
           _ref = that.panels;
           _results = [];
           for (cid in _ref) {
@@ -1129,7 +1143,8 @@
                   view.inactive();
                 }
               }
-              _results.push(view.$el.removeClass('active'));
+              view.$el.removeClass('active');
+              _results.push(view._tab.$el.removeClass('active'));
             }
           }
           return _results;
@@ -1231,7 +1246,8 @@
         event.preventDefault();
       }
       this.$el.addClass('active');
-      return this.trigger('activate');
+      this.trigger('activate');
+      return this;
     };
 
     Tab.prototype.beforeClose = function() {
@@ -1466,7 +1482,7 @@
         model: this
       };
       if (!this.isNew()) {
-        options.el = "[data-context-id='" + this.id + "']";
+        options.el = $("[data-context-id='" + this.id + "']").get(0);
       }
       return options;
     };
@@ -1686,10 +1702,6 @@
 
     __extends(ContextView, _super);
 
-    function ContextView() {
-      return ContextView.__super__.constructor.apply(this, arguments);
-    }
-
     ContextView.prototype.tagName = 'div';
 
     ContextView.prototype.className = 'context managed-context';
@@ -1700,22 +1712,23 @@
       return '';
     };
 
-    ContextView.prototype.beforeRender = function() {
-      if (!this.model.isNew()) {
-        return this.wrapper = false;
-      }
-    };
-
-    ContextView.prototype.afterRender = function() {
-      if (!this.$el.attr('data-context-id')) {
-        this.$el.attr('data-context-id', this.model.id);
-      }
-      if (!this.$el.attr('data-context-type')) {
-        this.$el.attr('data-context-type', this.model.type);
-      }
-      this.wrapper = true;
-      return this;
-    };
+    function ContextView() {
+      ContextView.__super__.constructor.apply(this, arguments);
+      this.on('render', function() {
+        if (this.model.isNew()) {
+          return this.wrapper = false;
+        }
+      });
+      this.one('rendered', function() {
+        if (!this.$el.attr('data-context-id')) {
+          this.$el.attr('data-context-id', this.model.id);
+        }
+        if (!this.$el.attr('data-context-type')) {
+          this.$el.attr('data-context-type', this.model.type);
+        }
+        return this.wrapper = true;
+      });
+    }
 
     ContextView.prototype.beforeClose = function() {
       if (this.model.isNew()) {
@@ -1762,7 +1775,7 @@
     Region.prototype.initialize = function() {};
 
     Region.prototype.beforeRender = function() {
-      if (!this.model.isNew()) {
+      if (this.model.isNew()) {
         return this.wrapper = false;
       }
     };
@@ -1777,10 +1790,7 @@
       var _this = this;
       return this.model.contexts.each(function(con) {
         _this.release(con.view);
-        _this.add(con.view);
-        if (con.isNew()) {
-          return con.view.render();
-        }
+        return _this.add(con.view).render();
       });
     };
 

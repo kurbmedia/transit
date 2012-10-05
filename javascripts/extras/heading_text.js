@@ -14,9 +14,12 @@
       return HeadingText.__super__.constructor.apply(this, arguments);
     }
 
+    HeadingText.prototype.type = 'HeadingText';
+
     HeadingText.prototype.defaults = {
-      node: 'h2',
-      body: "heading text"
+      node: 'h3',
+      body: "Heading content",
+      _type: 'HeadingText'
     };
 
     return HeadingText;
@@ -28,26 +31,69 @@
     __extends(HeadingView, _super);
 
     function HeadingView() {
-      this.tagName = __bind(this.tagName, this);
+      this.checkRemove = __bind(this.checkRemove, this);
       return HeadingView.__super__.constructor.apply(this, arguments);
     }
 
-    HeadingView.prototype.tagName = function() {
-      return this.model.get('node');
+    HeadingView.prototype.className = 'managed-context heading-text';
+
+    HeadingView.prototype.events = {
+      'change select[name="node"]': 'swapNode',
+      'click > .subhead': 'edit',
+      'blur > .subhead': 'edit',
+      'focusout > .subhead': 'edit',
+      'keydown > .subhead': 'checkKeys',
+      'click i.icon-remove': 'checkRemove'
     };
 
-    HeadingView.prototype.template = Handlebars.compile("{{body}}");
+    HeadingView.prototype.afterRender = function() {
+      return this.heading = this.$("> .subhead");
+    };
+
+    HeadingView.prototype.edit = function(event) {
+      var div;
+      div = $(event.currentTarget);
+      if (event.type === 'blur' || event.type === 'focusout') {
+        div.removeAttr('contenteditable');
+        return this.model.set('body', div.text());
+      } else {
+        return div.attr('contenteditable', 'true');
+      }
+    };
+
+    HeadingView.prototype.checkKeys = function(event) {
+      if (event.keyCode === 13) {
+        event.stopImmediatePropagation();
+        event.preventDefault();
+        return false;
+      }
+    };
+
+    HeadingView.prototype.checkRemove = function(event) {
+      if (confirm("Are you sure you want to remove this heading?")) {
+        this.model.destroy();
+        return this.close();
+      }
+    };
+
+    HeadingView.prototype.swapNode = function(event) {
+      var sel;
+      sel = $(event.currentTarget);
+      this.heading.replaceWith($("<" + (sel.val()) + "></" + (sel.val()) + ">").html(this.model.get('body')).addClass('subhead'));
+      this.heading = this.$('> .subhead');
+      return this;
+    };
 
     return HeadingView;
 
   })(Transit.ContextView);
 
-  HeadingText.prototype.view = HeadingView;
-
   Transit.set('context', 'HeadingText', HeadingText);
 
-  if (typeof module !== "undefined" && module !== null) {
-    module.exports = HeadingText;
-  }
+  HeadingView.prototype.template = Handlebars.compile('\
+<{{node}} name="body" class="subhead">{{{body}}}</{{node}}>\
+');
+
+  HeadingText.prototype.view = HeadingView;
 
 }).call(this);
