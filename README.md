@@ -89,7 +89,7 @@ panels, which can be added and removed as necessary depending on the content to 
 ### Contributing
 
 Transit is written in [CoffeeScript](http://jashkenas.github.com/coffee-script/), and is designed to function as a NPM package (currently the library has not been pushed).
-Tests are written using [jasmine](http://pivotal.github.com/jasmine/) and coffeescript.
+Tests are written using [jasmine](https://jasmine.github.io/) and coffeescript.
 
 To contribute, fork the [repository on GitHub](https://github.com/kurbmedia/transit) and [send a pull request](http://help.github.com/pull-requests/). Be sure to 
 include the issue # of your fix or feature implementation (if applicable), as well as any relevant tests/specs. Pull requests without associated (and passing) tests 
